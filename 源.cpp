@@ -36,8 +36,10 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count) {
                     ++file_count; // 文件计数加一
                 }
             }
-            catch (const std::filesystem::filesystem_error&) {
+            catch (const std::filesystem::filesystem_error& e) {
                 // 捕获权限不足的异常，直接忽略
+                cerr << "Error: " << e.what() << endl;
+                cerr << "Skipping directory: " << current_directory << endl;
                 continue;
             }
         }
