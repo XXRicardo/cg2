@@ -35,5 +35,6 @@ void traverse(const fs::path& directory) {
 
 int main() {
     traverse("C:\\Windows");
+    cout << endl;
     return 0;
 }
