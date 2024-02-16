@@ -8,7 +8,7 @@
 namespace fs = std::filesystem;
 using namespace std;
 
-void traverse(const fs::path& directory) {
+void traverse(const fs::path& directory, int& file_count, int& dir_count) {
     queue<fs::path> directories;
     directories.push(directory);
 
@@ -20,6 +20,7 @@ void traverse(const fs::path& directory) {
             try {
                 if (fs::is_directory(entry)) {
                     directories.push(entry.path());
+                    ++dir_count; // 目录计数加一
                 }
                 else {
                     // 如果是文件，输出文件名、路径和文件大小
@@ -31,6 +32,8 @@ void traverse(const fs::path& directory) {
                     auto last_write_time = fs::last_write_time(entry.path());
                     auto last_write_time_seconds = chrono::duration_cast<chrono::seconds>(last_write_time.time_since_epoch()).count();
                     cout << "最后修改时间: " << last_write_time_seconds << " 秒" << endl;
+                    cout << "*********************************************" << endl;
+                    ++file_count; // 文件计数加一
                 }
             }
             catch (const std::filesystem::filesystem_error&) {
@@ -41,6 +44,11 @@ void traverse(const fs::path& directory) {
 }
 
 int main() {
-    traverse("C:\\Windows");
+    int file_count = 0;
+    int dir_count = 0;
+    traverse("C:\\Windows", file_count, dir_count);
+
+    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+
     return 0;
 }
