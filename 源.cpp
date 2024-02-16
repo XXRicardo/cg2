@@ -42,5 +42,6 @@ void traverse(const fs::path& directory) {
 int main() {
     // µİ¹é±éÀú C:\Windows Ä¿Â¼
     traverse("C:\\Windows");
+    cout << endl;
     return 0;
 }
