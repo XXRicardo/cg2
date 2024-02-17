@@ -4,11 +4,20 @@
 #include <system_error>
 #include <chrono>
 #include <ctime>
+#include <vector>
 
 namespace fs = std::filesystem;
 using namespace std;
 
-void traverse(const fs::path& directory, int& file_count, int& dir_count) {
+// 定义文件信息结构
+struct FileInfo {
+    string filename;
+    string path;
+    uintmax_t file_size;
+    time_t last_write_time;
+};
+
+void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files) {
     queue<fs::path> directories;
     directories.push(directory);
 
@@ -23,24 +32,23 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count) {
                     ++dir_count; // 目录计数加一
                 }
                 else {
-                    // 如果是文件，输出文件名、路径和文件大小
-                    cout << "文件名: " << entry.path().filename() << endl;
-                    cout << "路径: " << entry.path() << endl;
-                    cout << "文件大小: " << fs::file_size(entry.path()) << " 字节" << endl;
+                    // 如果是文件，将文件信息存入 FileInfo 结构中
+                    FileInfo file_info;
+                    file_info.filename = entry.path().filename().string();
+                    file_info.path = entry.path().string();
+                    file_info.file_size = fs::file_size(entry.path());
 
-                    // 获取文件最后修改时间并转换为从 1970 年 1 月 1 日开始到现在的秒数
+                    // 将文件最后修改时间转换为 time_t 类型
                     auto last_write_time = fs::last_write_time(entry.path());
-                    auto last_write_time_seconds = chrono::duration_cast<chrono::seconds>(last_write_time.time_since_epoch()).count();
-                    cout << "最后修改时间: " << last_write_time_seconds << " 秒" << endl;
-                    cout << "*********************************************" << endl;
+                    auto last_write_time_point = chrono::time_point_cast<chrono::system_clock::duration>(last_write_time - fs::file_time_type::clock::now() + chrono::system_clock::now());
+                    file_info.last_write_time = chrono::system_clock::to_time_t(last_write_time_point);
+
+                    files.push_back(file_info);
                     ++file_count; // 文件计数加一
                 }
             }
-            catch (const std::filesystem::filesystem_error& e) {
+            catch (const std::filesystem::filesystem_error&) {
                 // 捕获权限不足的异常，直接忽略
-                cerr << "Error: " << e.what() << endl;
-                cerr << "Skipping directory: " << current_directory << endl;
-                continue;
             }
         }
     }
@@ -49,7 +57,8 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count) {
 int main() {
     int file_count = 0;
     int dir_count = 0;
-    traverse("C:\\Windows", file_count, dir_count);
+    vector<FileInfo> files;
+    traverse("C:\\Windows", file_count, dir_count, files);
 
     cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
 
