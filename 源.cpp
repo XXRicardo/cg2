@@ -1,29 +1,35 @@
 #include <iostream>
 #include <filesystem>
-#include <string>
+#include <stack>
 #include <system_error>
 
 namespace fs = std::filesystem;
 using namespace std;
 
 void traverse(const fs::path& directory) {
-    try {
-        for (const auto& entry : fs::directory_iterator(directory)) {
-            if (fs::is_directory(entry)) {
-                // 如果是目录，递归遍历子目录
-                traverse(entry.path());
-            }
-            else {
-                // 如果是文件，输出文件名、路径和文件大小
-                //cout << "文件名: " << entry.path().filename() << endl;
-                //cout << "路径: " << entry.path() << endl;
-                //cout << "文件大小: " << fs::file_size(entry.path()) << " 字节" << endl;
+    stack<fs::path> directories;
+    directories.push(directory);
+
+    while (!directories.empty()) {
+        fs::path current_directory = directories.top();
+        directories.pop();
+
+        try {
+            for (const auto& entry : fs::directory_iterator(current_directory)) {
+                if (fs::is_directory(entry)) {
+                    directories.push(entry.path());
+                }
+                else {
+                    // 如果是文件，输出文件名、路径和文件大小
+                    //cout << "文件名: " << entry.path().filename() << endl;
+                    //cout << "路径: " << entry.path() << endl;
+                    //cout << "文件大小: " << fs::file_size(entry.path()) << " 字节" << endl;
+                }
             }
         }
-    }
-    catch (const std::filesystem::filesystem_error& e) {
-        cerr << "Error: " << e.what() << endl;
-        cerr << "Skipping directory: " << directory << endl;
+        catch (const std::filesystem::filesystem_error&) {
+            // 捕获权限不足的异常，直接忽略
+        }
     }
 }
 
