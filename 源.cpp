@@ -4,6 +4,7 @@
 #include <system_error>
 #include <ctime>
 #include <chrono>
+#include <fstream>
 
 namespace fs = std::filesystem;
 using namespace std;
@@ -16,9 +17,31 @@ struct FileInfo {
     time_t last_write_time;
 };
 
+void writeToFile(const string& prefix, const vector<FileInfo>& files, int file_index) {
+    string filename = prefix + "_" + to_string(file_index) + ".txt";
+    ofstream outFile(filename);
+    if (!outFile.is_open()) {
+        cerr << "无法打开文件：" << filename << endl;
+        return;
+    }
+
+    for (const auto& file : files) {
+        outFile << "文件名: " << file.filename << endl;
+        outFile << "路径: " << file.path << endl;
+        outFile << "文件大小: " << file.file_size << " 字节" << endl;
+        outFile << "最后修改时间: " << file.last_write_time << endl;
+        outFile << "*********************************************" << endl;
+    }
+
+    outFile.close();
+}
+
 void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files) {
     stack<fs::path> directories;
     directories.push(directory);
+
+    int file_index = 1;
+    int file_limit = 10000; // 每个 txt 文件最多存放的文件数量
 
     while (!directories.empty()) {
         fs::path current_directory = directories.top();
@@ -44,12 +67,23 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
 
                     files.push_back(file_info);
                     ++file_count;
+
+                    // 如果达到每个文件的容量限制，将文件信息写入到 txt 文件中并清空文件信息列表
+                    if (file_count % file_limit == 0) {
+                        writeToFile("file_info", files, file_index++);
+                        files.clear();
+                    }
                 }
             }
         }
         catch (const std::filesystem::filesystem_error&) {
             // 捕获权限不足的异常，直接忽略
         }
+    }
+
+    // 如果文件信息列表不为空，将剩余的文件信息写入到最后一个 txt 文件中
+    if (!files.empty()) {
+        writeToFile("file_info", files, file_index);
     }
 }
 
