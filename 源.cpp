@@ -1,9 +1,9 @@
 #include <iostream>
 #include <filesystem>
 #include <stack>
-#include <system_error>
 #include <ctime>
 #include <chrono>
+#include <vector>
 #include <fstream>
 
 namespace fs = std::filesystem;
@@ -29,26 +29,22 @@ void writeToFile(const string& prefix, const vector<FileInfo>& files, int file_i
 
     string filename = "D:/myfile/" + prefix + "_" + to_string(file_index) + ".txt";
     ofstream outFile(filename);
-    if (!outFile.is_open()) {
-        cerr << "无法打开文件：" << filename << endl;
-        return;
+    if (outFile.is_open()) {
+        for (const auto& file : files) {
+            outFile << "文件名: " << file.filename << endl;
+            outFile << "路径: " << file.path << endl;
+            outFile << "文件大小: " << file.file_size << " 字节" << endl;
+            outFile << "最后修改时间: " << file.last_write_time << endl;
+            outFile << "所在目录深度: " << file.depth << endl;
+            outFile << "*********************************************" << endl;
+        }
+        outFile.close();
     }
-
-    for (const auto& file : files) {
-        outFile << "文件名: " << file.filename << endl;
-        outFile << "路径: " << file.path << endl;
-        outFile << "文件大小: " << file.file_size << " 字节" << endl;
-        outFile << "最后修改时间: " << file.last_write_time << endl;
-        outFile << "所在目录深度: " << file.depth << endl;
-        outFile << "*********************************************" << endl;
-    }
-
-    outFile.close();
 }
 
-void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int depth = 0) {
+void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_name) {
     stack<pair<fs::path, int>> directories; // pair中的第二项表示目录的深度
-    directories.push({ directory, depth });
+    directories.push({ directory, 0 });
 
     int file_index = 1;
     int file_limit = 10000; // 每个 txt 文件最多存放的文件数量
@@ -81,6 +77,15 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
                     files.push_back(file_info);
                     ++file_count;
 
+                    // 更新最大深度
+                    max_depth = max(max_depth, current_depth);
+
+                    // 更新深度最深的文件信息
+                    if (current_depth > deepest_file_depth) {
+                        deepest_file_depth = current_depth;
+                        deepest_file_name = entry.path().filename().string();
+                    }
+
                     // 如果达到每个文件的容量限制，将文件信息写入到 txt 文件中并清空文件信息列表
                     if (file_count % file_limit == 0) {
                         writeToFile("file_info", files, file_index++);
@@ -104,9 +109,16 @@ int main() {
     int file_count = 0;
     int dir_count = 0;
     vector<FileInfo> files;
-    traverse("C:\\Windows", file_count, dir_count, files);
+    int max_depth = 0;
+    int deepest_file_depth = 0;
+    string deepest_file_name;
+    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_name);
 
     cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+
+    cout << "深度最深的文件信息：" << endl;
+    cout << "深度: " << deepest_file_depth << endl;
+    cout << "文件名: " << deepest_file_name << endl;
 
     return 0;
 }
