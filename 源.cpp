@@ -15,10 +15,19 @@ struct FileInfo {
     string path;
     uintmax_t file_size;
     time_t last_write_time;
+    int depth; // 文件所在目录的深度
 };
 
+void createDirectory(const string& directory) {
+    if (!fs::exists(directory)) {
+        fs::create_directory(directory);
+    }
+}
+
 void writeToFile(const string& prefix, const vector<FileInfo>& files, int file_index) {
-    string filename = prefix + "_" + to_string(file_index) + ".txt";
+    createDirectory("D:/myfile"); // 确保文件夹存在
+
+    string filename = "D:/myfile/" + prefix + "_" + to_string(file_index) + ".txt";
     ofstream outFile(filename);
     if (!outFile.is_open()) {
         cerr << "无法打开文件：" << filename << endl;
@@ -30,27 +39,29 @@ void writeToFile(const string& prefix, const vector<FileInfo>& files, int file_i
         outFile << "路径: " << file.path << endl;
         outFile << "文件大小: " << file.file_size << " 字节" << endl;
         outFile << "最后修改时间: " << file.last_write_time << endl;
+        outFile << "所在目录深度: " << file.depth << endl;
         outFile << "*********************************************" << endl;
     }
 
     outFile.close();
 }
 
-void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files) {
-    stack<fs::path> directories;
-    directories.push(directory);
+void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int depth = 0) {
+    stack<pair<fs::path, int>> directories; // pair中的第二项表示目录的深度
+    directories.push({ directory, depth });
 
     int file_index = 1;
     int file_limit = 10000; // 每个 txt 文件最多存放的文件数量
 
     while (!directories.empty()) {
-        fs::path current_directory = directories.top();
+        fs::path current_directory = directories.top().first;
+        int current_depth = directories.top().second;
         directories.pop();
 
         try {
             for (const auto& entry : fs::directory_iterator(current_directory)) {
                 if (fs::is_directory(entry)) {
-                    directories.push(entry.path());
+                    directories.push({ entry.path(), current_depth + 1 });
                     ++dir_count;
                 }
                 else {
@@ -64,6 +75,8 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
                     auto last_write_time = fs::last_write_time(entry.path());
                     auto last_write_time_point = chrono::time_point_cast<chrono::system_clock::duration>(last_write_time - fs::file_time_type::clock::now() + chrono::system_clock::now());
                     file_info.last_write_time = chrono::system_clock::to_time_t(last_write_time_point);
+
+                    file_info.depth = current_depth;
 
                     files.push_back(file_info);
                     ++file_count;
