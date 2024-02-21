@@ -36,11 +36,8 @@ void writeToFile(const string& prefix, const vector<FileInfo>& files, int file_i
     createDirectory("D:/myfile"); // 确保文件夹存在
 
     string filename = "D:/myfile/" + prefix + "_" + to_string(file_index) + ".txt";
-    ofstream outFile(filename, ios::out | ios::binary); // 打开文件并指定为二进制写入模式
+    ofstream outFile(filename);
     if (outFile.is_open()) {
-        // 设置输出流的locale为UTF-8
-        outFile.imbue(locale("en_US.UTF-8"));
-
         for (const auto& file : files) {
             outFile << "文件路径: " << file.path << endl;
             outFile << "文件名: " << file.filename << endl;
@@ -56,11 +53,8 @@ void writeDirToFile(const string& prefix, const vector<DirectoryInfo>& dirs, int
     createDirectory("D:/mydir"); // 确保文件夹存在
 
     string filename = "D:/mydir/" + prefix + "_" + to_string(dir_index) + ".txt";
-    ofstream outFile(filename, ios::out | ios::binary); // 打开文件并指定为二进制写入模式
+    ofstream outFile(filename);
     if (outFile.is_open()) {
-        // 设置输出流的locale为UTF-8
-        outFile.imbue(locale("en_US.UTF-8"));
-
         for (const auto& dir : dirs) {
             outFile << "目录名: " << dir.name << endl;
             outFile << "深度: " << dir.depth << endl;
@@ -70,8 +64,6 @@ void writeDirToFile(const string& prefix, const vector<DirectoryInfo>& dirs, int
         outFile.close();
     }
 }
-
-
 
 void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
     stack<pair<fs::path, int>> dirs; // pair中的第二项表示目录的深度
