@@ -18,6 +18,14 @@ struct FileInfo {
     int depth; // 文件所在目录的深度
 };
 
+// 定义目录信息结构
+struct DirectoryInfo {
+    string name;
+    int depth;
+    int file_count;
+    string parent_directory;
+};
+
 void createDirectory(const string& directory) {
     if (!fs::exists(directory)) {
         fs::create_directory(directory);
@@ -36,29 +44,54 @@ void writeToFile(const string& prefix, const vector<FileInfo>& files, int file_i
             outFile << "文件大小: " << file.file_size << " 字节" << endl;
             outFile << "最后修改时间: " << file.last_write_time << endl;
             outFile << "所在目录深度: " << file.depth << endl;
-            outFile << "*********************************************" << endl;
         }
         outFile.close();
     }
 }
 
-void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path) {
-    stack<pair<fs::path, int>> directories; // pair中的第二项表示目录的深度
-    directories.push({ directory, 0 });
+void writeDirToFile(const string& prefix, const vector<DirectoryInfo>& dirs, int dir_index) {
+    createDirectory("D:/mydir"); // 确保文件夹存在
+
+    string filename = "D:/mydir/" + prefix + "_" + to_string(dir_index) + ".txt";
+    ofstream outFile(filename);
+    if (outFile.is_open()) {
+        for (const auto& dir : dirs) {
+            outFile << "目录名: " << dir.name << endl;
+            outFile << "深度: " << dir.depth << endl;
+            outFile << "文件数量: " << dir.file_count << endl;
+            outFile << "上级目录: " << dir.parent_directory << endl;
+        }
+        outFile.close();
+    }
+}
+
+void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
+    stack<pair<fs::path, int>> dirs; // pair中的第二项表示目录的深度
+    dirs.push({ directory, 0 });
 
     int file_index = 1;
     int file_limit = 10000; // 每个 txt 文件最多存放的文件数量
 
-    while (!directories.empty()) {
-        fs::path current_directory = directories.top().first;
-        int current_depth = directories.top().second;
-        directories.pop();
+    int dir_index = 1;
+    int dir_limit = 10000; // 每个 txt 文件最多存放的目录数量
+
+    while (!dirs.empty()) {
+        fs::path current_directory = dirs.top().first;
+        int current_depth = dirs.top().second;
+        dirs.pop();
+
+        DirectoryInfo dir_info;
+        dir_info.name = current_directory.filename().string();
+        dir_info.depth = current_depth;
+        dir_info.file_count = 0;
+        dir_info.parent_directory = current_directory.parent_path().string();
+        directories.push_back(dir_info);
+        ++dir_count;
 
         try {
             for (const auto& entry : fs::directory_iterator(current_directory)) {
                 if (fs::is_directory(entry)) {
-                    directories.push({ entry.path(), current_depth + 1 });
-                    ++dir_count;
+                    dirs.push({ entry.path(), current_depth + 1 });
                 }
                 else {
                     // 如果是文件，将文件信息存入 FileInfo 结构中
@@ -86,6 +119,9 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
                         deepest_file_path = entry.path().string();
                     }
 
+                    // 更新目录中的文件数量
+                    ++directories.back().file_count;
+
                     // 如果达到每个文件的容量限制，将文件信息写入到 txt 文件中并清空文件信息列表
                     if (file_count % file_limit == 0) {
                         writeToFile("file_info", files, file_index++);
@@ -97,11 +133,22 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
         catch (const std::filesystem::filesystem_error&) {
             // 捕获权限不足的异常，直接忽略
         }
+
+        // 如果达到每个目录的容量限制，将目录信息写入到 txt 文件中并清空目录信息列表
+        if (dir_count % dir_limit == 0) {
+            writeDirToFile("dir_info", directories, dir_index++);
+            directories.clear();
+        }
     }
 
     // 如果文件信息列表不为空，将剩余的文件信息写入到最后一个 txt 文件中
     if (!files.empty()) {
         writeToFile("file_info", files, file_index);
+    }
+
+    // 如果目录信息列表不为空，将剩余的目录信息写入到最后一个 txt 文件中
+    if (!directories.empty()) {
+        writeDirToFile("dir_info", directories, dir_index);
     }
 }
 
@@ -112,7 +159,8 @@ int main() {
     int max_depth = 0;
     int deepest_file_depth = 0;
     string deepest_file_path;
-    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path);
+    vector<DirectoryInfo> directories;
+    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories);
 
     cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
 
