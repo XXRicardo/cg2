@@ -26,21 +26,15 @@ struct DirectoryInfo {
     string parent_directory;
 };
 
-void createDirectory(const string& directory) {
-    if (!fs::exists(directory)) {
-        fs::create_directory(directory);
-    }
-}
-
 void writeToFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
     if (outFile.is_open()) {
         for (const auto& file : files) {
-            outFile << "文件路径: " << file.path << endl;
-            outFile << "文件名: " << file.filename << endl;
-            outFile << "文件大小: " << file.file_size << " 字节" << endl;
-            outFile << "最后修改时间: " << file.last_write_time << endl;
-            outFile << "所在目录深度: " << file.depth << endl;
+            outFile << file.filename << ","
+                << file.path << ","
+                << file.file_size << ","
+                << file.last_write_time << ","
+                << file.depth << endl;
         }
         outFile.close();
     }
@@ -50,10 +44,10 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
     ofstream outFile(filename);
     if (outFile.is_open()) {
         for (const auto& dir : dirs) {
-            outFile << "目录名: " << dir.name << endl;
-            outFile << "深度: " << dir.depth << endl;
-            outFile << "文件数量: " << dir.file_count << endl;
-            outFile << "上级目录: " << dir.parent_directory << endl;
+            outFile << dir.name << ","
+                << dir.depth << ","
+                << dir.file_count << ","
+                << dir.parent_directory << endl;
         }
         outFile.close();
     }
