@@ -51,6 +51,7 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
             outFile << dir.name << ","
                 << dir.depth << ","
                 << dir.file_count << ","
+                << dir.total_file_size << ","
                 << dir.parent_directory << endl;
         }
         outFile.close();
@@ -157,7 +158,7 @@ int main() {
     int deepest_file_depth = 0;
     string deepest_file_path;
     vector<DirectoryInfo> directories;
-    cout << "正在扫盘..." << endl;
+    cout << "正在扫描..." << endl;
     traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories);
 
     return 0;
