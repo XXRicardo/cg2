@@ -24,7 +24,11 @@ struct DirectoryInfo {
     int depth;
     int file_count;
     string parent_directory;
+    FileInfo earliest_file; // 最早时间的文件信息
+    FileInfo latest_file;   // 最晚时间的文件信息
+    uintmax_t total_file_size; // 总的文件大小
 };
+
 
 void writeToFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
@@ -52,7 +56,10 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
         outFile.close();
     }
 }
-
+// 比较两个时间点的先后顺序
+bool compareTime(const time_t& time1, const time_t& time2) {
+    return difftime(time1, time2) < 0;
+}
 void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
     stack<pair<fs::path, int>> dirs; // pair中的第二项表示目录的深度
     dirs.push({ directory, 0 });
@@ -67,6 +74,12 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
         dir_info.depth = current_depth;
         dir_info.file_count = 0;
         dir_info.parent_directory = current_directory.parent_path().string();
+        dir_info.total_file_size = 0; // 初始化总的文件大小为 0
+
+        // 初始化最早时间的文件和最晚时间的文件的信息
+        dir_info.earliest_file.last_write_time = std::numeric_limits<time_t>::max();
+        dir_info.latest_file.last_write_time = 0;
+
         directories.push_back(dir_info);
         ++dir_count;
 
@@ -103,6 +116,17 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
 
                     // 更新目录中的文件数量
                     ++directories.back().file_count;
+
+                    // 更新最早时间的文件和最晚时间的文件的信息
+                    if (compareTime(file_info.last_write_time, directories.back().earliest_file.last_write_time)) {
+                        directories.back().earliest_file = file_info;
+                    }
+                    if (compareTime(directories.back().latest_file.last_write_time, file_info.last_write_time)) {
+                        directories.back().latest_file = file_info;
+                    }
+
+                    // 累加总的文件大小
+                    directories.back().total_file_size += file_info.file_size;
                 }
             }
         }
@@ -123,6 +147,7 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
     cout << "最大深度: " << deepest_file_depth << endl;
     cout << "文件路径及名字: " << deepest_file_path << endl;
 }
+
 
 int main() {
     int file_count = 0;
