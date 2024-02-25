@@ -52,6 +52,8 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
                 << dir.depth << ","
                 << dir.file_count << ","
                 << dir.total_file_size << ","
+                << dir.earliest_file.filename << ","
+                << dir.earliest_file.last_write_time << ","
                 << dir.parent_directory << endl;
         }
         outFile.close();
@@ -135,18 +137,6 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
             // 捕获权限不足的异常，直接忽略
         }
     }
-
-    // 写入文件信息到文件
-    writeToFile("D:/myfile.txt", files);
-
-    // 写入目录信息到文件
-    writeDirToFile("D:/mydir.txt", directories);
-
-    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-
-    cout << "深度最深的文件信息：" << endl;
-    cout << "最大深度: " << deepest_file_depth << endl;
-    cout << "文件路径及名字: " << deepest_file_path << endl;
 }
 
 
@@ -161,5 +151,16 @@ int main() {
     cout << "正在扫描..." << endl;
     traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories);
 
+    // 写入文件信息到文件
+    writeToFile("D:/myfile.txt", files);
+
+    // 写入目录信息到文件
+    writeDirToFile("D:/mydir.txt", directories);
+
+    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+
+    cout << "深度最深的文件信息：" << endl;
+    cout << "最大深度: " << deepest_file_depth << endl;
+    cout << "文件路径及名字: " << deepest_file_path << endl;
     return 0;
 }
