@@ -8,6 +8,7 @@
 
 namespace fs = std::filesystem;
 using namespace std;
+
 // 定义文件信息结构
 struct FileInfo {
     string filename;
@@ -16,6 +17,7 @@ struct FileInfo {
     time_t last_write_time;
     int depth; // 文件所在目录的深度
 };
+
 // 定义目录信息结构
 struct DirectoryInfo {
     string name;
@@ -55,10 +57,12 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
         outFile.close();
     }
 }
+
 // 比较两个时间点的先后顺序
 bool compareTime(const time_t& time1, const time_t& time2) {
     return difftime(time1, time2) < 0;
 }
+
 void traverse(const fs::path& directory, DirectoryInfo* parent, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
     DirectoryInfo dir_info;
     dir_info.name = directory.filename().string();
@@ -129,7 +133,6 @@ void traverse(const fs::path& directory, DirectoryInfo* parent, int& file_count,
     directories.push_back(dir_info);
     ++dir_count;
 }
-
 
 int main() {
     int file_count = 0;
