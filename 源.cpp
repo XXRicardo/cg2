@@ -5,7 +5,6 @@
 #include <chrono>
 #include <vector>
 #include <fstream>
-#include <unordered_map>
 
 namespace fs = std::filesystem;
 using namespace std;
@@ -28,12 +27,8 @@ struct DirectoryInfo {
     FileInfo earliest_file; // 最早时间的文件信息
     FileInfo latest_file;   // 最晚时间的文件信息
     uintmax_t total_file_size; // 总的文件大小
-
-    DirectoryInfo* first_child; // 左孩子节点
-    DirectoryInfo* next_sibling; // 右兄弟节点
-
-    DirectoryInfo() : first_child(nullptr), next_sibling(nullptr) {}
 };
+
 
 void writeToFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
@@ -61,42 +56,10 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
         outFile.close();
     }
 }
-
 // 比较两个时间点的先后顺序
 bool compareTime(const time_t& time1, const time_t& time2) {
     return difftime(time1, time2) < 0;
 }
-
-// 构建左孩子右兄弟树
-void buildTree(vector<DirectoryInfo>& directories) {
-    if (directories.empty()) return;
-
-    // 使用哈希表存储目录节点，方便查找
-    unordered_map<string, DirectoryInfo*> directory_map;
-
-    // 遍历目录信息
-    for (auto& dir : directories) {
-        // 在哈希表中查找父目录节点
-        auto it = directory_map.find(dir.parent_directory);
-        if (it != directory_map.end()) {
-            // 找到父目录节点，连接到父节点的子目录链表中
-            DirectoryInfo* parent = it->second;
-            if (!parent->first_child) {
-                parent->first_child = &dir;
-            }
-            else {
-                DirectoryInfo* sibling = parent->first_child;
-                while (sibling->next_sibling) {
-                    sibling = sibling->next_sibling;
-                }
-                sibling->next_sibling = &dir;
-            }
-        }
-        // 将当前目录节点添加到哈希表中
-        directory_map[dir.name] = &dir;
-    }
-}
-
 void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
     stack<pair<fs::path, int>> dirs; // pair中的第二项表示目录的深度
     dirs.push({ directory, 0 });
@@ -171,9 +134,6 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
             // 捕获权限不足的异常，直接忽略
         }
     }
-
-    // 构建左孩子右兄弟树
-    buildTree(directories);
 
     // 写入文件信息到文件
     writeToFile("D:/myfile.txt", files);
