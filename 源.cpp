@@ -5,7 +5,7 @@
 #include <chrono>
 #include <vector>
 #include <fstream>
-#include <iomanip> // 添加头文件以使用 std::put_time
+#include <memory>
 
 namespace fs = std::filesystem;
 using namespace std;
@@ -28,7 +28,13 @@ struct DirectoryInfo {
     FileInfo earliest_file; // 最早时间的文件信息
     FileInfo latest_file;   // 最晚时间的文件信息
     uintmax_t total_file_size; // 总的文件大小
+    vector<shared_ptr<DirectoryInfo>> children; // 子目录列表
 };
+
+// 比较两个时间点的先后顺序
+bool compareTime(const time_t& time1, const time_t& time2) {
+    return difftime(time1, time2) < 0;
+}
 
 void writeToFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
@@ -48,42 +54,16 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
     ofstream outFile(filename);
     if (outFile.is_open()) {
         for (const auto& dir : dirs) {
-            // 格式化最早时间的文件的修改时间
-            std::tm* earliest_time = std::localtime(&dir.earliest_file.last_write_time);
-            std::stringstream earliest_time_str;
-            if (earliest_time) {
-                earliest_time_str << std::put_time(earliest_time, "%Y-%m-%d");
-            }
-            else {
-                earliest_time_str << "Invalid Time"; // 如果时间无效，则输出错误信息
-            }
-
-            // 格式化最晚时间的文件的修改时间
-            std::tm* latest_time = std::localtime(&dir.latest_file.last_write_time);
-            std::stringstream latest_time_str;
-            if (latest_time) {
-                latest_time_str << std::put_time(latest_time, "%Y-%m-%d");
-            }
-            else {
-                latest_time_str << "Invalid Time"; // 如果时间无效，则输出错误信息
-            }
-
             outFile << dir.name << ","
                 << dir.depth << ","
                 << dir.file_count << ","
                 << dir.total_file_size << ","
-                << earliest_time_str.str() << "," // 输出最早时间的文件的修改时间
-                << latest_time_str.str() << ","   // 输出最晚时间的文件的修改时间
+                << dir.earliest_file.filename << ","
+                << dir.earliest_file.last_write_time << ","
                 << dir.parent_directory << endl;
         }
         outFile.close();
     }
-}
-
-
-// 比较两个时间点的先后顺序
-bool compareTime(const time_t& time1, const time_t& time2) {
-    return difftime(time1, time2) < 0;
 }
 
 void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
@@ -162,6 +142,72 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
     }
 }
 
+void buildTree(const fs::path& root_directory, vector<shared_ptr<DirectoryInfo>>& nodes) {
+    stack<pair<fs::path, shared_ptr<DirectoryInfo>>> dirs;
+    dirs.push({ root_directory, nullptr });
+
+    while (!dirs.empty()) {
+        fs::path current_directory = dirs.top().first;
+        shared_ptr<DirectoryInfo> parent_node = dirs.top().second;
+        dirs.pop();
+
+        // 创建当前目录节点
+        shared_ptr<DirectoryInfo> current_node = make_shared<DirectoryInfo>();
+        current_node->name = current_directory.filename().string();
+        current_node->depth = current_directory.relative_path().string().size();
+        current_node->file_count = 0;
+        current_node->parent_directory = current_directory.parent_path().string();
+        current_node->total_file_size = 0;
+
+        // 初始化最早时间的文件和最晚时间的文件的信息
+        current_node->earliest_file.last_write_time = std::numeric_limits<time_t>::max();
+        current_node->latest_file.last_write_time = 0;
+
+        // 如果有父节点，将当前节点加入父节点的孩子列表中
+        if (parent_node != nullptr) {
+            parent_node->children.push_back(current_node);
+        }
+
+        nodes.push_back(current_node);
+
+        try {
+            for (const auto& entry : fs::directory_iterator(current_directory)) {
+                if (fs::is_directory(entry)) {
+                    // 将子目录和节点加入栈中，准备处理子目录
+                    dirs.push({ entry.path(), current_node });
+                }
+                else {
+                    // 如果是文件，更新当前节点的文件信息
+                    FileInfo file_info;
+                    file_info.filename = entry.path().filename().string();
+                    file_info.path = entry.path().string();
+                    file_info.file_size = fs::file_size(entry.path());
+
+                    // 获取文件最后修改时间并转换为 time_t 类型
+                    auto last_write_time = fs::last_write_time(entry.path());
+                    auto last_write_time_point = chrono::time_point_cast<chrono::system_clock::duration>(last_write_time - fs::file_time_type::clock::now() + chrono::system_clock::now());
+                    file_info.last_write_time = chrono::system_clock::to_time_t(last_write_time_point);
+
+                    // 更新当前节点的文件数量和总文件大小
+                    current_node->file_count++;
+                    current_node->total_file_size += file_info.file_size;
+
+                    // 更新最早时间的文件和最晚时间的文件的信息
+                    if (compareTime(file_info.last_write_time, current_node->earliest_file.last_write_time)) {
+                        current_node->earliest_file = file_info;
+                    }
+                    if (compareTime(current_node->latest_file.last_write_time, file_info.last_write_time)) {
+                        current_node->latest_file = file_info;
+                    }
+                }
+            }
+        }
+        catch (const std::filesystem::filesystem_error&) {
+            // 捕获权限不足的异常，直接忽略
+        }
+    }
+}
+
 int main() {
     int file_count = 0;
     int dir_count = 0;
@@ -184,6 +230,20 @@ int main() {
     cout << "深度最深的文件信息：" << endl;
     cout << "最大深度: " << deepest_file_depth << endl;
     cout << "文件路径及名字: " << deepest_file_path << endl;
+
+    // 构建目录树
+    vector<shared_ptr<DirectoryInfo>> nodes;
+    buildTree("C:\\Windows", nodes);
+
+    //// 打印目录树
+    //cout << "目录树：" << endl;
+    //for (const auto& node : nodes) {
+    //    cout << "目录名: " << node->name << endl;
+    //    cout << "深度: " << node->depth << endl;
+    //    cout << "文件数量: " << node->file_count << endl;
+    //    cout << "总的文件大小: " << node->total_file_size << " 字节" << endl;
+    //    cout << "父目录: " << node->parent_directory << endl;
+    //}
 
     return 0;
 }
