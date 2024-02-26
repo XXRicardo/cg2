@@ -5,6 +5,7 @@
 #include <chrono>
 #include <vector>
 #include <fstream>
+#include <iomanip> // 添加头文件以使用 std::put_time
 
 namespace fs = std::filesystem;
 using namespace std;
@@ -29,7 +30,6 @@ struct DirectoryInfo {
     uintmax_t total_file_size; // 总的文件大小
 };
 
-
 void writeToFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
     if (outFile.is_open()) {
@@ -48,21 +48,44 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
     ofstream outFile(filename);
     if (outFile.is_open()) {
         for (const auto& dir : dirs) {
+            // 格式化最早时间的文件的修改时间
+            std::tm* earliest_time = std::localtime(&dir.earliest_file.last_write_time);
+            std::stringstream earliest_time_str;
+            if (earliest_time) {
+                earliest_time_str << std::put_time(earliest_time, "%Y-%m-%d");
+            }
+            else {
+                earliest_time_str << "Invalid Time"; // 如果时间无效，则输出错误信息
+            }
+
+            // 格式化最晚时间的文件的修改时间
+            std::tm* latest_time = std::localtime(&dir.latest_file.last_write_time);
+            std::stringstream latest_time_str;
+            if (latest_time) {
+                latest_time_str << std::put_time(latest_time, "%Y-%m-%d");
+            }
+            else {
+                latest_time_str << "Invalid Time"; // 如果时间无效，则输出错误信息
+            }
+
             outFile << dir.name << ","
                 << dir.depth << ","
                 << dir.file_count << ","
                 << dir.total_file_size << ","
-                << dir.earliest_file.filename << ","
-                << dir.earliest_file.last_write_time << ","
+                << earliest_time_str.str() << "," // 输出最早时间的文件的修改时间
+                << latest_time_str.str() << ","   // 输出最晚时间的文件的修改时间
                 << dir.parent_directory << endl;
         }
         outFile.close();
     }
 }
+
+
 // 比较两个时间点的先后顺序
 bool compareTime(const time_t& time1, const time_t& time2) {
     return difftime(time1, time2) < 0;
 }
+
 void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
     stack<pair<fs::path, int>> dirs; // pair中的第二项表示目录的深度
     dirs.push({ directory, 0 });
@@ -139,7 +162,6 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
     }
 }
 
-
 int main() {
     int file_count = 0;
     int dir_count = 0;
@@ -162,5 +184,6 @@ int main() {
     cout << "深度最深的文件信息：" << endl;
     cout << "最大深度: " << deepest_file_depth << endl;
     cout << "文件路径及名字: " << deepest_file_path << endl;
+
     return 0;
 }
