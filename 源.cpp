@@ -28,7 +28,18 @@ struct DirectoryInfo {
     FileInfo earliest_file; // 最早时间的文件信息
     FileInfo latest_file;   // 最晚时间的文件信息
     uintmax_t total_file_size; // 总的文件大小
+
+    DirectoryInfo* first_child; // 第一个子目录
+    DirectoryInfo* next_sibling; // 下一个兄弟节点
+
+    DirectoryInfo() : name(""), depth(0), file_count(0), parent_directory(""), total_file_size(0), first_child(nullptr), next_sibling(nullptr) {}
+
+    DirectoryInfo(const string& n, int d, const string& parent)
+        : name(n), depth(d), parent_directory(parent),
+        file_count(0), total_file_size(0),
+        first_child(nullptr), next_sibling(nullptr) {}
 };
+
 
 void writeToFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
@@ -73,6 +84,32 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
 // 比较两个时间点的先后顺序
 bool compareTime(const time_t& time1, const time_t& time2) {
     return difftime(time1, time2) < 0;
+}
+
+void buildDirectoryTree(const fs::path& directory, DirectoryInfo* parent) {
+    DirectoryInfo* current = parent;
+
+    try {
+        for (const auto& entry : fs::directory_iterator(directory)) {
+            if (fs::is_directory(entry)) {
+                DirectoryInfo* child = new DirectoryInfo(entry.path().filename().string(), parent->depth + 1, entry.path().parent_path().string());
+                buildDirectoryTree(entry, child);
+                if (!current->first_child) {
+                    current->first_child = child;
+                }
+                else {
+                    DirectoryInfo* sibling = current->first_child;
+                    while (sibling->next_sibling) {
+                        sibling = sibling->next_sibling;
+                    }
+                    sibling->next_sibling = child;
+                }
+            }
+        }
+    }
+    catch (const std::filesystem::filesystem_error&) {
+        // 捕获权限不足的异常，直接忽略
+    }
 }
 
 void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
@@ -162,6 +199,9 @@ int main() {
     cout << "正在扫描..." << endl;
     traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories);
 
+    DirectoryInfo root("C:\\Windows", 0, "");
+    buildDirectoryTree("C:\\Windows", &root);
+
     // 写入文件信息到文件
     writeToFile("D:/myfile.txt", files);
 
@@ -169,7 +209,6 @@ int main() {
     writeDirToFile("D:/mydir.txt", directories);
 
     cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-
     cout << "深度最深的文件信息：" << endl;
     cout << "最大深度: " << deepest_file_depth << endl;
     cout << "文件路径及名字: " << deepest_file_path << endl;
