@@ -28,7 +28,9 @@ struct DirectoryInfo {
     FileInfo earliest_file; // 最早时间的文件信息
     FileInfo latest_file;   // 最晚时间的文件信息
     uintmax_t total_file_size; // 总的文件大小
-    vector<shared_ptr<DirectoryInfo>> children; // 子目录列表
+    shared_ptr<DirectoryInfo> parent; // 父目录
+    shared_ptr<DirectoryInfo> child; // 第一个孩子
+    shared_ptr<DirectoryInfo> sibling; // 下一个兄弟
 };
 
 // 比较两个时间点的先后顺序
@@ -146,6 +148,8 @@ void buildTree(const fs::path& root_directory, vector<shared_ptr<DirectoryInfo>>
     stack<pair<fs::path, shared_ptr<DirectoryInfo>>> dirs;
     dirs.push({ root_directory, nullptr });
 
+    shared_ptr<DirectoryInfo> prev_node = nullptr; // 上一个节点
+
     while (!dirs.empty()) {
         fs::path current_directory = dirs.top().first;
         shared_ptr<DirectoryInfo> parent_node = dirs.top().second;
@@ -158,6 +162,7 @@ void buildTree(const fs::path& root_directory, vector<shared_ptr<DirectoryInfo>>
         current_node->file_count = 0;
         current_node->parent_directory = current_directory.parent_path().string();
         current_node->total_file_size = 0;
+        current_node->parent = parent_node;
 
         // 初始化最早时间的文件和最晚时间的文件的信息
         current_node->earliest_file.last_write_time = std::numeric_limits<time_t>::max();
@@ -165,8 +170,15 @@ void buildTree(const fs::path& root_directory, vector<shared_ptr<DirectoryInfo>>
 
         // 如果有父节点，将当前节点加入父节点的孩子列表中
         if (parent_node != nullptr) {
-            parent_node->children.push_back(current_node);
+            if (parent_node->child == nullptr) {
+                parent_node->child = current_node;
+            }
+            else {
+                prev_node->sibling = current_node;
+            }
         }
+
+        prev_node = current_node;
 
         nodes.push_back(current_node);
 
@@ -231,19 +243,9 @@ int main() {
     cout << "最大深度: " << deepest_file_depth << endl;
     cout << "文件路径及名字: " << deepest_file_path << endl;
 
-    // 构建目录树
+    // 构建孩子兄弟树
     vector<shared_ptr<DirectoryInfo>> nodes;
     buildTree("C:\\Windows", nodes);
-
-    //// 打印目录树
-    //cout << "目录树：" << endl;
-    //for (const auto& node : nodes) {
-    //    cout << "目录名: " << node->name << endl;
-    //    cout << "深度: " << node->depth << endl;
-    //    cout << "文件数量: " << node->file_count << endl;
-    //    cout << "总的文件大小: " << node->total_file_size << " 字节" << endl;
-    //    cout << "父目录: " << node->parent_directory << endl;
-    //}
 
     return 0;
 }
