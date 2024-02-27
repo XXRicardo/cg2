@@ -12,21 +12,21 @@ using namespace std;
 
 // 定义文件信息结构
 struct FileInfo {
-    string filename;
-    string path;
-    uintmax_t file_size;
-    time_t last_write_time;
+    string filename;//文件名
+    string path;//文件路径
+    uintmax_t file_size;//文件大小
+    time_t last_write_time;//文件最后修改时间
     int depth; // 文件所在目录的深度
 };
 
 // 定义目录信息结构
 struct DirectoryInfo {
-    string name;
-    int depth;
-    int file_count;
-    string parent_directory;
-    FileInfo earliest_file; // 最早时间的文件信息
-    FileInfo latest_file;   // 最晚时间的文件信息
+    string name;//目录名
+    int depth;//目录深度
+    int file_count;//目录下的文件数量
+    string parent_directory;//父目录名
+    FileInfo earliest_file; // 最早修改时间的文件信息
+    FileInfo latest_file;   // 最晚修改时间的文件信息
     uintmax_t total_file_size; // 总的文件大小
 };
 
@@ -171,7 +171,7 @@ int main() {
     string deepest_file_path;
     vector<DirectoryInfo> directories;
     cout << "正在扫描..." << endl;
-    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories);
+    traverse("C:/Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories);
 
     // 写入文件信息到文件
     writeToFile("D:/myfile.txt", files);
