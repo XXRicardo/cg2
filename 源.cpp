@@ -246,7 +246,5 @@ int main() {
     buildBinaryTree("C:/Windows", nullptr, last_sibling); // 构建二叉树
     cout << "二叉树构建完成。" << endl;
 
-
-
     return 0;
 }
