@@ -230,6 +230,7 @@ int main() {
     cout << "深度最深的文件信息：" << endl;
     cout << "最大深度: " << deepest_file_depth << endl;
     cout << "文件路径及名字: " << deepest_file_path << endl;
+
     cout << "正在建树。" << endl;
     // 构建二叉树
     DirectoryInfo* root = new DirectoryInfo(); // 创建根节点
