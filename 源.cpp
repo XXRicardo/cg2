@@ -228,7 +228,7 @@ int main() {
     vector<DirectoryInfo> directories;
 
     cout << "正在扫描..." << endl;
-    traverse("C:\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
     // 写入文件信息到文件
     writeToFile("D:/myfile.txt", files);
     // 写入目录信息到文件
@@ -241,7 +241,7 @@ int main() {
     cout << "正在建树。" << endl;
     // 构建二叉树
     DirectoryInfo* root = new DirectoryInfo(); // 创建根节点
-    root->name = "C:\Windows";
+    root->name = "C:\\Windows";
     root->depth = 0;
     root->file_count = 0;
     root->parent_directory = "";
@@ -250,7 +250,7 @@ int main() {
     root->right_sibling = nullptr;
 
     DirectoryInfo* last_sibling = nullptr; // 用于记录上一个兄弟节点
-    buildBinaryTree("C:\Windows", nullptr, last_sibling); // 构建二叉树
+    buildBinaryTree("C:\\Windows", nullptr, last_sibling); // 构建二叉树
     cout << "二叉树构建完成。" << endl;
 
     return 0;
