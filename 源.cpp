@@ -21,19 +21,21 @@ struct FileInfo {
 
 // 定义目录信息结构
 struct DirectoryInfo {
-    string name;            //目录名
-    int depth;              //目录深度
-    int file_count;         //目录下的文件数量
-    string parent_directory;//父目录名
+    string full_path;       // 带路径的目录名
+    string name;            // 目录名
+    int depth;              // 目录深度
+    int file_count;         // 目录下的文件数量
+    string parent_directory;// 父目录名
     FileInfo earliest_file; // 最早修改时间的文件信息
     FileInfo latest_file;   // 最晚修改时间的文件信息
     uintmax_t total_file_size; // 总的文件大小
+    int shen;               // 节点深度
 
     // Binary tree pointers
     DirectoryInfo* left_child;  // 左孩子指针
     DirectoryInfo* right_sibling; // 右兄弟指针
 
-    DirectoryInfo() : left_child(nullptr), right_sibling(nullptr) {} // 构造函数初始化指针
+    DirectoryInfo() : left_child(nullptr), right_sibling(nullptr), shen(0) {} // 构造函数初始化指针和深度
 };
 
 // 原有的函数，用于写入文件信息
@@ -51,40 +53,43 @@ void writeToFile(const string& filename, const vector<FileInfo>& files) {
     }
 }
 
-// 原有的函数，用于写入目录信息
+// 修改后的函数，用于将目录信息写入文件，包括年月日时分秒格式的修改时间
 void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
     ofstream outFile(filename);
     if (outFile.is_open()) {
         for (const auto& dir : dirs) {
-            // 格式化最早时间的文件的修改时间
+            // 格式化最早时间的文件的修改时间（年月日时分秒）
             std::tm* earliest_time = std::localtime(&dir.earliest_file.last_write_time);
             std::stringstream earliest_time_str;
             if (earliest_time) {
-                earliest_time_str << std::put_time(earliest_time, "%Y-%m-%d");
+                earliest_time_str << std::put_time(earliest_time, "%Y-%m-%d %H:%M:%S");
             }
             else {
                 earliest_time_str << "Invalid Time"; // 如果时间无效，则输出错误信息
             }
-            // 格式化最晚时间的文件的修改时间
+            // 格式化最晚时间的文件的修改时间（年月日时分秒）
             std::tm* latest_time = std::localtime(&dir.latest_file.last_write_time);
             std::stringstream latest_time_str;
             if (latest_time) {
-                latest_time_str << std::put_time(latest_time, "%Y-%m-%d");
+                latest_time_str << std::put_time(latest_time, "%Y-%m-%d %H:%M:%S");
             }
             else {
                 latest_time_str << "Invalid Time"; // 如果时间无效，则输出错误信息
             }
-            outFile << dir.name << ","
+            outFile << dir.full_path << "," // 写入带路径的目录名
+                << dir.name << ","
                 << dir.depth << ","
                 << dir.file_count << ","
                 << dir.total_file_size << ","
                 << earliest_time_str.str() << "," // 输出最早时间的文件的修改时间
                 << latest_time_str.str() << ","   // 输出最晚时间的文件的修改时间
-                << dir.parent_directory << endl;
+                << dir.parent_directory << ","
+                << dir.shen << endl;   // 输出节点深度
         }
         outFile.close();
     }
 }
+
 
 // 比较两个时间点的先后顺序
 bool compareTime(const time_t& time1, const time_t& time2) {
@@ -94,6 +99,7 @@ bool compareTime(const time_t& time1, const time_t& time2) {
 // 修改后的函数，用于构建二叉树
 void buildBinaryTree(const fs::path& directory, DirectoryInfo* parent, DirectoryInfo*& last_sibling) {
     DirectoryInfo* current = new DirectoryInfo(); // 创建新的目录信息节点
+    current->full_path = directory.string(); // 存储带路径的目录名
     current->name = directory.filename().string();
     current->depth = parent ? parent->depth + 1 : 0;
     current->file_count = 0;
@@ -101,6 +107,7 @@ void buildBinaryTree(const fs::path& directory, DirectoryInfo* parent, Directory
     current->total_file_size = 0;
     current->left_child = nullptr;
     current->right_sibling = nullptr;
+    current->shen = parent ? parent->shen + 1 : 0; // 设置节点深度
 
     // 递归构建左子树
     if (fs::is_directory(directory)) {
@@ -135,7 +142,6 @@ void buildBinaryTree(const fs::path& directory, DirectoryInfo* parent, Directory
     last_sibling = current; // 更新最后一个兄弟节点
 }
 
-
 // 原有的函数，用于递归遍历目录并收集信息
 void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
     stack<pair<fs::path, int>> dirs; // pair中的第二项表示目录的深度
@@ -147,11 +153,13 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
         dirs.pop();
 
         DirectoryInfo dir_info;
+        dir_info.full_path = current_directory.string(); // 存储带路径的目录名
         dir_info.name = current_directory.filename().string();
         dir_info.depth = current_depth;
         dir_info.file_count = 0;
         dir_info.parent_directory = current_directory.parent_path().string();
         dir_info.total_file_size = 0; // 初始化总的文件大小为 0
+        dir_info.shen = 0; // 初始化节点深度为 0
 
         // 初始化最早时间的文件和最晚时间的文件的信息
         dir_info.earliest_file.last_write_time = std::numeric_limits<time_t>::max();
@@ -210,7 +218,6 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
         }
     }
 }
-
 int main() {
     int file_count = 0;
     int dir_count = 0;
@@ -221,7 +228,7 @@ int main() {
     vector<DirectoryInfo> directories;
 
     cout << "正在扫描..." << endl;
-    traverse("C:/Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    traverse("C:\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
     // 写入文件信息到文件
     writeToFile("D:/myfile.txt", files);
     // 写入目录信息到文件
@@ -234,7 +241,7 @@ int main() {
     cout << "正在建树。" << endl;
     // 构建二叉树
     DirectoryInfo* root = new DirectoryInfo(); // 创建根节点
-    root->name = "C:/Windows";
+    root->name = "C:\Windows";
     root->depth = 0;
     root->file_count = 0;
     root->parent_directory = "";
@@ -243,7 +250,7 @@ int main() {
     root->right_sibling = nullptr;
 
     DirectoryInfo* last_sibling = nullptr; // 用于记录上一个兄弟节点
-    buildBinaryTree("C:/Windows", nullptr, last_sibling); // 构建二叉树
+    buildBinaryTree("C:\Windows", nullptr, last_sibling); // 构建二叉树
     cout << "二叉树构建完成。" << endl;
 
     return 0;
