@@ -28,12 +28,12 @@ struct DirectoryInfo {
     FileInfo earliest_file; // 最早修改时间的文件信息
     FileInfo latest_file;   // 最晚修改时间的文件信息
     uintmax_t total_file_size; // 总的文件大小
-
+    int td;
     // Binary tree pointers
     DirectoryInfo* left_child;  // 左孩子指针
     DirectoryInfo* right_sibling; // 右兄弟指针
 
-    DirectoryInfo() : left_child(nullptr), right_sibling(nullptr) {} // 构造函数初始化指针
+    DirectoryInfo() : left_child(nullptr), right_sibling(nullptr),td(0) {} // 构造函数初始化指针
 };
 
 // 原有的函数，用于写入文件信息
@@ -93,29 +93,44 @@ bool compareTime(const time_t& time1, const time_t& time2) {
 }
 
 // 修改后的函数，用于构建二叉树
-void buildBinaryTree(const fs::path& directory, DirectoryInfo* parent, DirectoryInfo*& last_sibling) {
-    DirectoryInfo* current = new DirectoryInfo(); // 创建新的目录信息节点
-    current->name = directory.filename().string();
-    current->depth = parent ? parent->depth + 1 : 0;
-    current->file_count = 0;
-    current->parent_directory = parent ? parent->name : ""; // 设置父目录名
-    current->total_file_size = 0;
-    current->left_child = nullptr;
-    current->right_sibling = nullptr;
+void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
+    stack<pair<fs::path, DirectoryInfo*>> nodeStack; // 使用栈存储目录信息节点和对应的文件系统路径
 
-    // 递归构建左子树
-    if (fs::is_directory(directory)) {
-        DirectoryInfo* prev_sibling = nullptr; // 上一个兄弟节点
+    nodeStack.push({ rootDirectory, root }); // 将根节点和根目录路径入栈
+
+    while (!nodeStack.empty()) {
+        fs::path currentPath = nodeStack.top().first; // 当前目录路径
+        DirectoryInfo* currentNode = nodeStack.top().second; // 当前目录信息节点
+        nodeStack.pop();
+
+        DirectoryInfo* prevSibling = nullptr; // 上一个兄弟节点
+
         try {
-            for (const auto& entry : fs::directory_iterator(directory)) {
+            for (const auto& entry : fs::directory_iterator(currentPath)) {
                 if (fs::is_directory(entry)) {
-                    buildBinaryTree(entry, current, prev_sibling ? prev_sibling : last_sibling);
-                    prev_sibling = prev_sibling ? prev_sibling->right_sibling : current->left_child;
+                    DirectoryInfo* newDirectory = new DirectoryInfo(); // 创建新的目录信息节点
+                    newDirectory->name = entry.path().filename().string();
+                    newDirectory->depth = currentNode->depth + 1;
+                    newDirectory->file_count = 0;
+                    newDirectory->parent_directory = currentNode->name; // 设置父目录名
+                    newDirectory->total_file_size = 0;
+                    newDirectory->td = currentNode->td + 1; // 设置节点在二叉树中的层次深度
+
+                    if (prevSibling) {
+                        prevSibling->right_sibling = newDirectory; // 设置右兄弟节点
+                    }
+                    else {
+                        currentNode->left_child = newDirectory; // 设置左孩子节点
+                    }
+
+                    prevSibling = newDirectory; // 更新上一个兄弟节点
+
+                    nodeStack.push({ entry, newDirectory }); // 将新的目录信息节点和目录路径入栈
                 }
                 else {
                     // 更新目录中的文件数量和总文件大小
-                    ++current->file_count;
-                    current->total_file_size += fs::file_size(entry.path());
+                    ++currentNode->file_count;
+                    currentNode->total_file_size += fs::file_size(entry.path());
                 }
             }
         }
@@ -123,17 +138,6 @@ void buildBinaryTree(const fs::path& directory, DirectoryInfo* parent, Directory
             // 捕获权限不足的异常，直接忽略
         }
     }
-
-    // 将当前节点挂在父节点下或者作为父节点的兄弟节点
-    if (parent) {
-        if (!parent->left_child) {
-            parent->left_child = current; // 第一个子节点
-        }
-        else {
-            last_sibling->right_sibling = current; // 兄弟节点
-        }
-    }
-    last_sibling = current; // 更新最后一个兄弟节点
 }
 
 
@@ -221,16 +225,16 @@ int main() {
     string deepest_file_path;
     vector<DirectoryInfo> directories;
 
-    cout << "正在扫描..." << endl;
-    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
-    // 写入文件信息到文件
-    writeToFile("D:/myfile.txt", files);
-    // 写入目录信息到文件
-    writeDirToFile("D:/mydir.txt", directories);
-    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-    cout << "深度最深的文件信息：" << endl;
-    cout << "最大深度: " << deepest_file_depth << endl;
-    cout << "文件路径及名字: " << deepest_file_path << endl;
+    //cout << "正在扫描..." << endl;
+    //traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    //// 写入文件信息到文件
+    //writeToFile("D:/myfile.txt", files);
+    //// 写入目录信息到文件
+    //writeDirToFile("D:/mydir.txt", directories);
+    //cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+    //cout << "深度最深的文件信息：" << endl;
+    //cout << "最大深度: " << deepest_file_depth << endl;
+    //cout << "文件路径及名字: " << deepest_file_path << endl;
 
     cout << "正在建树。" << endl;
     // 构建二叉树
@@ -242,9 +246,7 @@ int main() {
     root->total_file_size = 0;
     root->left_child = nullptr;
     root->right_sibling = nullptr;
-
-    DirectoryInfo* last_sibling = nullptr; // 用于记录上一个兄弟节点
-    buildBinaryTree("C:\\Windows", nullptr, last_sibling); // 构建二叉树
+    buildBinaryTree("C:\\Windows", root); // 构建二叉树
     cout << "二叉树构建完成。" << endl;
 
     return 0;
