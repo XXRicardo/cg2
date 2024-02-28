@@ -111,13 +111,14 @@ void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
                     newDirectory->file_count = 0;
                     newDirectory->parent_directory = currentNode->pathname;
                     newDirectory->total_file_size = 0;
-                    newDirectory->td = parent_td + 1;  // 子节点的 td 值比父节点的 td 值增加 1
+                   
 
                     if (prevSibling) {
                         newDirectory->td = prevSibling->td + 1;//非常关键
                         prevSibling->right_sibling = newDirectory;
                     }
                     else {
+                        newDirectory->td = parent_td + 1;  // 子节点的 td 值比父节点的 td 值增加 1
                         currentNode->left_child = newDirectory;
                     }
 
@@ -253,15 +254,15 @@ int main() {
     vector<DirectoryInfo> directories;
 
     cout << "正在扫描..." << endl;
-    //traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
-    //// 写入文件信息到文件
-    //writeToFile("D:/myfile.txt", files);
-    //// 写入目录信息到文件
-    //writeDirToFile("D:/mydir.txt", directories);
-    //cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-    //cout << "深度最深的文件信息：" << endl;
-    //cout << "最大深度: " << deepest_file_depth << endl;
-    //cout << "文件路径及名字: " << deepest_file_path << endl;
+    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    // 写入文件信息到文件
+    writeToFile("D:/myfile.txt", files);
+    // 写入目录信息到文件
+    writeDirToFile("D:/mydir.txt", directories);
+    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+    cout << "深度最深的文件信息：" << endl;
+    cout << "最大深度: " << deepest_file_depth << endl;
+    cout << "文件路径及名字: " << deepest_file_path << endl;
 
     cout << "正在建树。" << endl;
     // 构建二叉树
