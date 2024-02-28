@@ -28,7 +28,7 @@ struct DirectoryInfo {
     FileInfo earliest_file; // 最早修改时间的文件信息
     FileInfo latest_file;   // 最晚修改时间的文件信息
     uintmax_t total_file_size; // 总的文件大小
-    int td;
+    int td;                 //树深
     // Binary tree pointers
     DirectoryInfo* left_child;  // 左孩子指针
     DirectoryInfo* right_sibling; // 右兄弟指针
@@ -80,7 +80,7 @@ void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
                 << dir.total_file_size << ","
                 << earliest_time_str.str() << "," // 输出最早时间的文件的修改时间
                 << latest_time_str.str() << ","   // 输出最晚时间的文件的修改时间
-                << dir.parent_directory << endl;
+                << dir.parent_directory  << endl;
         }
         outFile.close();
     }
@@ -108,7 +108,7 @@ void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
             for (const auto& entry : fs::directory_iterator(currentPath)) {
                 if (fs::is_directory(entry)) {
                     DirectoryInfo* newDirectory = new DirectoryInfo();
-                    newDirectory->pathname = entry.path().string();
+                    newDirectory->pathname = entry.path().string()+"\\";
                     newDirectory->depth = currentNode->depth + 1;
                     newDirectory->file_count = 0;
                     newDirectory->parent_directory = currentNode->pathname;
@@ -166,7 +166,7 @@ int findMaxTd(DirectoryInfo* root) {
         }
     }
 
-    return maxTd;
+    return maxTd*2;
 }
 
 
@@ -181,10 +181,10 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
         dirs.pop();
 
         DirectoryInfo dir_info;
-        dir_info.pathname = current_directory.string();
+        dir_info.pathname = current_directory.string()+"\\";
         dir_info.depth = current_depth;
         dir_info.file_count = 0;
-        dir_info.parent_directory = current_directory.parent_path().string();
+        dir_info.parent_directory = current_directory.parent_path().string()+"\\";
         dir_info.total_file_size = 0; // 初始化总的文件大小为 0
 
         // 初始化最早时间的文件和最晚时间的文件的信息
@@ -268,7 +268,7 @@ int main() {
     cout << "正在建树。" << endl;
     // 构建二叉树
     DirectoryInfo* root = new DirectoryInfo(); // 创建根节点
-    root->pathname = "C:\\Windows";
+    root->pathname = "C:\\Windows\\";
     root->depth = 0;
     root->td = 0;
     root->file_count = 0;
