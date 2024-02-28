@@ -95,12 +95,10 @@ bool compareTime(const time_t& time1, const time_t& time2) {
 void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
     stack<pair<fs::path, DirectoryInfo*>> nodeStack;
     nodeStack.push({ rootDirectory, root });
-
     while (!nodeStack.empty()) {
         fs::path currentPath = nodeStack.top().first;
         DirectoryInfo* currentNode = nodeStack.top().second;
         nodeStack.pop();
-
         DirectoryInfo* prevSibling = nullptr;
         int parent_td = currentNode->td; // 记录父节点的 td 值
 
@@ -166,7 +164,7 @@ int findMaxTd(DirectoryInfo* root) {
         }
     }
 
-    return maxTd*2;
+    return maxTd*3;
 }
 
 
@@ -255,15 +253,15 @@ int main() {
     vector<DirectoryInfo> directories;
 
     cout << "正在扫描..." << endl;
-    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
-    // 写入文件信息到文件
-    writeToFile("D:/myfile.txt", files);
-    // 写入目录信息到文件
-    writeDirToFile("D:/mydir.txt", directories);
-    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-    cout << "深度最深的文件信息：" << endl;
-    cout << "最大深度: " << deepest_file_depth << endl;
-    cout << "文件路径及名字: " << deepest_file_path << endl;
+    //traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    //// 写入文件信息到文件
+    //writeToFile("D:/myfile.txt", files);
+    //// 写入目录信息到文件
+    //writeDirToFile("D:/mydir.txt", directories);
+    //cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+    //cout << "深度最深的文件信息：" << endl;
+    //cout << "最大深度: " << deepest_file_depth << endl;
+    //cout << "文件路径及名字: " << deepest_file_path << endl;
 
     cout << "正在建树。" << endl;
     // 构建二叉树
@@ -279,6 +277,6 @@ int main() {
     buildBinaryTree("C:\\Windows", root); // 构建二叉树
     cout << "二叉树构建完成。" << endl;
     int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
-    cout << "所有节点中最大的 td 值为: " << maxTd << endl;
+    cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
     return 0;
 }
