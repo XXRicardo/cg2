@@ -118,6 +118,7 @@ void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
                         prevSibling->right_sibling = newDirectory;
                     }
                     else {
+                        //cout << newDirectory->pathname<<endl;
                         newDirectory->td = parent_td + 1;  // 子节点的 td 值比父节点的 td 值增加 1
                         currentNode->left_child = newDirectory;
                     }
@@ -243,6 +244,88 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
         }
     }
 }
+void printDirectoryInfo(const string& inputPath, DirectoryInfo* root) {
+    string targetPath = inputPath;
+
+    // 找到对应的节点
+    DirectoryInfo* targetNode = nullptr;
+    stack<DirectoryInfo*> nodeStack;
+    nodeStack.push(root);
+
+    while (!nodeStack.empty()) {
+        DirectoryInfo* currentNode = nodeStack.top();
+        nodeStack.pop();
+
+        if (currentNode->pathname == targetPath) {
+            targetNode = currentNode;
+            break;
+        }
+
+        DirectoryInfo* childNode = currentNode->left_child;
+        while (childNode) {
+            nodeStack.push(childNode);
+            childNode = childNode->right_sibling;
+        }
+    }
+
+    // 如果找到了目标节点，打印信息
+    if (targetNode) {
+        cout << "目录搜寻成功" << endl;
+        cout << "文件总数为: " << targetNode->file_count << endl;
+        cout << "文件总大小: " << targetNode->total_file_size << " 字节" << endl;
+
+        // 打印最早修改时间的文件信息
+        std::tm* earliest_time = std::localtime(&targetNode->earliest_file.last_write_time);
+        if (earliest_time) {
+            cout << "最早文件信息: " << endl;
+            std::stringstream ss;
+            ss << std::put_time(earliest_time, "%Y-%m-%d %H:%M:%S");
+            std::cout << "最后修改时间: " << ss.str() << std::endl;
+            cout << "文件名: " << targetNode->earliest_file.filename << endl;
+            cout << "文件大小: " << targetNode->earliest_file.file_size << " 字节" << endl;
+        }
+        else {
+            cout << "最早文件信息获取失败" << endl;
+        }
+
+        // 打印最晚修改时间的文件信息
+        std::tm* latest_time = std::localtime(&targetNode->latest_file.last_write_time);
+        if (latest_time) {
+            cout << "最晚文件信息: " << endl;
+            std::stringstream ss;
+            ss << std::put_time(latest_time, "%Y-%m-%d %H:%M:%S");
+            std::cout << "最后修改时间: " << ss.str() << std::endl;
+            cout << "文件名: " << targetNode->latest_file.filename << endl;
+            cout << "文件大小: " << targetNode->latest_file.file_size << " 字节" << endl;
+        }
+        else {
+            cout << "最晚文件信息获取失败" << endl;
+        }
+    }
+    else {
+        cout << "未找到目标目录" << endl;
+    }
+}
+
+
+void printDirectoryInfoLoop(DirectoryInfo* root) {
+    string inputPath;
+    while (true) {
+        // 获取用户输入的目录路径
+        cout << "请输入带路径的目录名（输入0退出查询）: ";
+        getline(cin, inputPath);
+
+        // 如果用户输入"0"则退出查询
+        if (inputPath == "0") {
+            cout << "查询结束。" << endl;
+            break;
+        }
+
+        // 调用函数打印目录信息
+        printDirectoryInfo(inputPath, root);
+    }
+}
+
 
 int main() {
     int file_count = 0;
@@ -253,16 +336,16 @@ int main() {
     string deepest_file_path;
     vector<DirectoryInfo> directories;
 
-    cout << "正在扫描..." << endl;
-    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
-    // 写入文件信息到文件
-    writeToFile("D:/myfile.txt", files);
-    // 写入目录信息到文件
-    writeDirToFile("D:/mydir.txt", directories);
-    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-    cout << "深度最深的文件信息：" << endl;
-    cout << "最大深度: " << deepest_file_depth << endl;
-    cout << "文件路径及名字: " << deepest_file_path << endl;
+    //cout << "正在扫描..." << endl;
+    //traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    //// 写入文件信息到文件
+    //writeToFile("D:/myfile.txt", files);
+    //// 写入目录信息到文件
+    //writeDirToFile("D:/mydir.txt", directories);
+    //cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+    //cout << "深度最深的文件信息：" << endl;
+    //cout << "最大深度: " << deepest_file_depth << endl;
+    //cout << "文件路径及名字: " << deepest_file_path << endl;
 
     cout << "正在建树。" << endl;
     // 构建二叉树
@@ -279,5 +362,8 @@ int main() {
     cout << "二叉树构建完成。" << endl;
     int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
     cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
+    // 调用循环函数查询目录信息
+    printDirectoryInfoLoop(root);
+
     return 0;
 }
