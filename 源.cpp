@@ -101,7 +101,11 @@ void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
         nodeStack.pop();
         DirectoryInfo* prevSibling = nullptr;
         int parent_td = currentNode->td; // 记录父节点的 td 值
-
+        // 保存最早和最晚修改时间的文件信息
+        FileInfo earliestFile;
+        earliestFile.last_write_time = std::numeric_limits<time_t>::max();
+        FileInfo latestFile;
+        latestFile.last_write_time = 0;
         try {
             for (const auto& entry : fs::directory_iterator(currentPath)) {
                 if (fs::is_directory(entry)) {
@@ -129,7 +133,21 @@ void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
                 }
                 else {
                     ++currentNode->file_count;
-                    currentNode->total_file_size += fs::file_size(entry.path());
+                    uintmax_t fileSize = fs::file_size(entry.path());
+                    currentNode->total_file_size += fileSize;
+
+                    // 更新最早和最晚修改时间的文件信息
+                    time_t lastWriteTime = fs::last_write_time(entry.path()).time_since_epoch().count();
+                    if (lastWriteTime < earliestFile.last_write_time) {
+                        earliestFile.last_write_time = lastWriteTime;
+                        earliestFile.filename = entry.path().filename().string();
+                        earliestFile.file_size = fileSize;
+                    }
+                    if (lastWriteTime > latestFile.last_write_time) {
+                        latestFile.last_write_time = lastWriteTime;
+                        latestFile.filename = entry.path().filename().string();
+                        latestFile.file_size = fileSize;
+                    }
                 }
             }
         }
@@ -244,85 +262,72 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
         }
     }
 }
-void printDirectoryInfo(const string& inputPath, DirectoryInfo* root) {
-    string targetPath = inputPath;
-
-    // 找到对应的节点
-    DirectoryInfo* targetNode = nullptr;
-    stack<DirectoryInfo*> nodeStack;
-    nodeStack.push(root);
-
-    while (!nodeStack.empty()) {
-        DirectoryInfo* currentNode = nodeStack.top();
-        nodeStack.pop();
-
-        if (currentNode->pathname == targetPath) {
-            targetNode = currentNode;
-            break;
-        }
-
-        DirectoryInfo* childNode = currentNode->left_child;
-        while (childNode) {
-            nodeStack.push(childNode);
-            childNode = childNode->right_sibling;
-        }
-    }
-
-    // 如果找到了目标节点，打印信息
-    if (targetNode) {
-        cout << "目录搜寻成功" << endl;
-        cout << "文件总数为: " << targetNode->file_count << endl;
-        cout << "文件总大小: " << targetNode->total_file_size << " 字节" << endl;
-
-        // 打印最早修改时间的文件信息
-        std::tm* earliest_time = std::localtime(&targetNode->earliest_file.last_write_time);
-        if (earliest_time) {
-            cout << "最早文件信息: " << endl;
-            std::stringstream ss;
-            ss << std::put_time(earliest_time, "%Y-%m-%d %H:%M:%S");
-            std::cout << "最后修改时间: " << ss.str() << std::endl;
-            cout << "文件名: " << targetNode->earliest_file.filename << endl;
-            cout << "文件大小: " << targetNode->earliest_file.file_size << " 字节" << endl;
-        }
-        else {
-            cout << "最早文件信息获取失败" << endl;
-        }
-
-        // 打印最晚修改时间的文件信息
-        std::tm* latest_time = std::localtime(&targetNode->latest_file.last_write_time);
-        if (latest_time) {
-            cout << "最晚文件信息: " << endl;
-            std::stringstream ss;
-            ss << std::put_time(latest_time, "%Y-%m-%d %H:%M:%S");
-            std::cout << "最后修改时间: " << ss.str() << std::endl;
-            cout << "文件名: " << targetNode->latest_file.filename << endl;
-            cout << "文件大小: " << targetNode->latest_file.file_size << " 字节" << endl;
-        }
-        else {
-            cout << "最晚文件信息获取失败" << endl;
-        }
-    }
-    else {
-        cout << "未找到目标目录" << endl;
-    }
-}
-
 
 void printDirectoryInfoLoop(DirectoryInfo* root) {
     string inputPath;
     while (true) {
-        // 获取用户输入的目录路径
-        cout << "请输入带路径的目录名（输入0退出查询）: ";
+        cout << "请输入目录路径（输入 0 退出）：" << endl;
         getline(cin, inputPath);
 
-        // 如果用户输入"0"则退出查询
         if (inputPath == "0") {
-            cout << "查询结束。" << endl;
+            cout << "退出查询" << endl;
             break;
         }
 
-        // 调用函数打印目录信息
-        printDirectoryInfo(inputPath, root);
+        string targetPath = inputPath;
+
+        // 找到对应的节点
+        DirectoryInfo* targetNode = nullptr;
+        stack<DirectoryInfo*> nodeStack;
+        nodeStack.push(root);
+
+        while (!nodeStack.empty()) {
+            DirectoryInfo* currentNode = nodeStack.top();
+            nodeStack.pop();
+
+            if (currentNode->pathname == targetPath) {
+                targetNode = currentNode;
+                break;
+            }
+
+            DirectoryInfo* childNode = currentNode->left_child;
+            while (childNode) {
+                nodeStack.push(childNode);
+                childNode = childNode->right_sibling;
+            }
+        }
+
+        // 如果找到了目标节点，打印信息
+        if (targetNode) {
+            cout << "目录搜寻成功" << endl;
+            cout << "文件总数为: " << targetNode->file_count << endl;
+            cout << "文件总大小: " << targetNode->total_file_size << "字节" << endl;
+
+            // 打印最早修改时间的文件信息
+            if (!targetNode->earliest_file.filename.empty()) {
+                cout << "最早文件信息: " << endl;
+                cout << "文件名: " << targetNode->earliest_file.filename << endl;
+                cout << "文件大小: " << targetNode->earliest_file.file_size << "字节" << endl;
+                cout << "最后修改时间: " << targetNode->earliest_file.last_write_time << endl;
+            }
+            else {
+                cout << "最早文件信息获取失败" << endl;
+            }
+
+            // 打印最晚修改时间的文件信息
+            if (!targetNode->latest_file.filename.empty()) {
+                cout << "最晚文件信息: " << endl;
+                cout << "文件名: " << targetNode->latest_file.filename << endl;
+                cout << "文件大小: " << targetNode->latest_file.file_size << "字节" << endl;
+                cout << "最后修改时间: " << targetNode->latest_file.last_write_time << endl;
+            }
+            else {
+                cout << "最晚文件信息获取失败" << endl;
+            }
+        }
+        else {
+            cout << "未找到目标目录" << endl;
+        }
     }
 }
 
