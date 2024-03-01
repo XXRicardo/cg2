@@ -1,6 +1,7 @@
 #include <iostream>
 #include <filesystem>
 #include <stack>
+#include <queue>
 #include <ctime>
 #include <chrono>
 #include <vector>
@@ -361,42 +362,44 @@ void printLoop(DirectoryInfo*& root) {
 void dirop(DirectoryInfo*& root, const string& targetPath) {
     if (!root)
         return;
-    if (targetPath == dirpath) {
-        cout << "未找到目标目录节点！" << endl;
-        return;
-    }
-    // 查找目标节点并删除
-    DirectoryInfo* parentNode = nullptr;
-    DirectoryInfo* currentNode = root;
-    DirectoryInfo* prevNode = nullptr;
 
-    while (currentNode) {
+    queue<DirectoryInfo*> q;
+    q.push(root);
+
+    DirectoryInfo* parentNode = nullptr;
+    DirectoryInfo* currentNode = nullptr;
+
+    while (!q.empty()) {
+        currentNode = q.front();
+        q.pop();
+
         if (currentNode->pathname == targetPath) {
             // 先打印目标节点的信息
             printDir(targetPath, currentNode);
             cout << endl;
+
             // 删除目标节点以及其子节点
-            if (prevNode)
-                prevNode->right_sibling = currentNode->right_sibling;
-            else if (parentNode)
-                parentNode->left_child = currentNode->right_sibling;
+            if (parentNode)
+                parentNode->right_sibling = currentNode->right_sibling;
             else
                 root = currentNode->right_sibling; // 更新根节点指针
-            dirpath = targetPath;
+
             delete currentNode;
             cout << "成功删除目录 " << targetPath << " 及其子目录" << endl;
+            cout << endl;
             return;
         }
 
-        // 递归处理子目录
-        dirop(currentNode->left_child, targetPath);
+        DirectoryInfo* childNode = currentNode->left_child;
+        while (childNode) {
+            q.push(childNode);
+            childNode = childNode->right_sibling;
+        }
 
-        // 更新节点指针
         parentNode = currentNode;
-        currentNode = currentNode->right_sibling;
     }
-
 }
+
 
 
 
