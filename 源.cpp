@@ -35,7 +35,7 @@ struct DirectoryInfo {
 
     DirectoryInfo() : left_child(nullptr), right_sibling(nullptr),td(0) {} // 构造函数初始化指针
 };
-string dirpath;
+string dirpath=" ";
 // 原有的函数，用于写入文件信息
 void writeFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
@@ -361,7 +361,10 @@ void printLoop(DirectoryInfo*& root) {
 void dirop(DirectoryInfo*& root, const string& targetPath) {
     if (!root)
         return;
-
+    if (targetPath == dirpath) {
+        cout << "未找到目标目录节点！" << endl;
+        return;
+    }
     // 查找目标节点并删除
     DirectoryInfo* parentNode = nullptr;
     DirectoryInfo* currentNode = root;
