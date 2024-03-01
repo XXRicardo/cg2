@@ -35,7 +35,7 @@ struct DirectoryInfo {
 
     DirectoryInfo() : left_child(nullptr), right_sibling(nullptr),td(0) {} // 构造函数初始化指针
 };
-
+string dirpath;
 // 原有的函数，用于写入文件信息
 void writeFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
@@ -272,9 +272,13 @@ void scan(const fs::path& directory, int& file_count, int& dir_count, vector<Fil
         }
     }
 }
-void printDir(const string& inputPath, DirectoryInfo* root) {
-    string targetPath = inputPath;
 
+void printDir(const string& inputPath, DirectoryInfo* root) {
+    if (inputPath == dirpath) {
+        cout << "未找到目标目录节点！" << endl;
+        return;
+    }
+    string targetPath = inputPath;
     // 找到对应的节点
     DirectoryInfo* targetNode = nullptr;
     stack<DirectoryInfo*> nodeStack;
@@ -336,7 +340,7 @@ void printDir(const string& inputPath, DirectoryInfo* root) {
 }
 
 
-void printLoop(DirectoryInfo* root) {
+void printLoop(DirectoryInfo*& root) {
     string inputPath;
     while (true) {
         // 获取用户输入的目录路径
@@ -354,9 +358,9 @@ void printLoop(DirectoryInfo* root) {
     }
 }
 
-DirectoryInfo* dirop(DirectoryInfo* root, const string& targetPath) {
+void dirop(DirectoryInfo*& root, const string& targetPath) {
     if (!root)
-        return nullptr;
+        return;
 
     // 查找目标节点并删除
     DirectoryInfo* parentNode = nullptr;
@@ -365,28 +369,30 @@ DirectoryInfo* dirop(DirectoryInfo* root, const string& targetPath) {
 
     while (currentNode) {
         if (currentNode->pathname == targetPath) {
-            // 找到目标目录节点，删除该节点以及其子节点
+            // 先打印目标节点的信息
+            printDir(targetPath, currentNode);
+            cout << endl;
+            // 删除目标节点以及其子节点
             if (prevNode)
                 prevNode->right_sibling = currentNode->right_sibling;
             else if (parentNode)
                 parentNode->left_child = currentNode->right_sibling;
             else
                 root = currentNode->right_sibling; // 更新根节点指针
-
+            dirpath = targetPath;
             delete currentNode;
             cout << "成功删除目录 " << targetPath << " 及其子目录" << endl;
-            return root;
+            return;
         }
-        
+
         // 递归处理子目录
-        root->left_child = dirop(root->left_child, targetPath);
+        dirop(currentNode->left_child, targetPath);
 
         // 更新节点指针
         parentNode = currentNode;
         currentNode = currentNode->right_sibling;
     }
 
-    return root;
 }
 
 
@@ -458,7 +464,7 @@ int main() {
                  if (pos != string::npos) {
                      string pathname = input.substr(0, pos);
                      string operation = input.substr(pos + 1);
-                     root = dirop(root, pathname); // 更新根节点指针
+                     dirop(root, pathname);
                  }
                  else {
                      cout << "输入无效，请重新输入！" << endl;
