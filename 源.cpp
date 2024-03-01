@@ -37,7 +37,7 @@ struct DirectoryInfo {
 };
 
 // 原有的函数，用于写入文件信息
-void writeToFile(const string& filename, const vector<FileInfo>& files) {
+void writeFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
     if (outFile.is_open()) {
         for (const auto& file : files) {
@@ -51,6 +51,7 @@ void writeToFile(const string& filename, const vector<FileInfo>& files) {
     }
 }
 void UI() {
+    cout << endl;
     cout << "***********************************************" << endl;
     cout << "* ------------------------------------------- *" << endl;
     cout << "*|    请选择您要执行的功能：                 |*" << endl;
@@ -60,9 +61,10 @@ void UI() {
     cout << "*|    0.退出程序                             |*" << endl;
     cout << "* ------------------------------------------- *" << endl;
     cout << "***********************************************" << endl;
+    cout << endl;
 }
 // 修改后的函数，用于将目录信息写入文件，包括年月日时分秒格式的修改时间
-void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
+void writeDir(const string& filename, const vector<DirectoryInfo>& dirs) {
     ofstream outFile(filename);
     if (outFile.is_open()) {
         for (const auto& dir : dirs) {
@@ -102,7 +104,7 @@ bool compareTime(const time_t& time1, const time_t& time2) {
     return difftime(time1, time2) < 0;
 }
 
-void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
+void buildTree(const fs::path& rootDirectory, DirectoryInfo* root) {
     stack<pair<fs::path, DirectoryInfo*>> nodeStack;
     nodeStack.push({ rootDirectory, root });
 
@@ -167,8 +169,6 @@ void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
     }
 }
 
-
-
 int findMaxTd(DirectoryInfo* root) {
     if (!root)
         return -1;
@@ -198,9 +198,8 @@ int findMaxTd(DirectoryInfo* root) {
     return maxTd*3;
 }
 
-
-// 原有的函数，用于递归遍历目录并收集信息
-void traverse(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
+// 用于遍历目录并收集信息
+void scan(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
     stack<pair<fs::path, int>> dirs; // pair中的第二项表示目录的深度
     dirs.push({ directory, 0 });
 
@@ -273,7 +272,7 @@ void traverse(const fs::path& directory, int& file_count, int& dir_count, vector
         }
     }
 }
-void printDirectoryInfo(const string& inputPath, DirectoryInfo* root) {
+void printDir(const string& inputPath, DirectoryInfo* root) {
     string targetPath = inputPath;
 
     // 找到对应的节点
@@ -332,12 +331,12 @@ void printDirectoryInfo(const string& inputPath, DirectoryInfo* root) {
         }
     }
     else {
-        cout << "未找到目标目录" << endl;
+        cout << "未找到目标目录节点！" << endl;
     }
 }
 
 
-void printDirectoryInfoLoop(DirectoryInfo* root) {
+void printLoop(DirectoryInfo* root) {
     string inputPath;
     while (true) {
         // 获取用户输入的目录路径
@@ -351,9 +350,45 @@ void printDirectoryInfoLoop(DirectoryInfo* root) {
         }
 
         // 调用函数打印目录信息
-        printDirectoryInfo(inputPath, root);
+        printDir(inputPath, root);
     }
 }
+
+DirectoryInfo* dirop(DirectoryInfo* root, const string& targetPath) {
+    if (!root)
+        return nullptr;
+
+    // 查找目标节点并删除
+    DirectoryInfo* parentNode = nullptr;
+    DirectoryInfo* currentNode = root;
+    DirectoryInfo* prevNode = nullptr;
+
+    while (currentNode) {
+        if (currentNode->pathname == targetPath) {
+            // 找到目标目录节点，删除该节点以及其子节点
+            if (prevNode)
+                prevNode->right_sibling = currentNode->right_sibling;
+            else if (parentNode)
+                parentNode->left_child = currentNode->right_sibling;
+            else
+                root = currentNode->right_sibling; // 更新根节点指针
+
+            delete currentNode;
+            cout << "成功删除目录 " << targetPath << " 及其子目录" << endl;
+            return root;
+        }
+        
+        // 递归处理子目录
+        root->left_child = dirop(root->left_child, targetPath);
+
+        // 更新节点指针
+        parentNode = currentNode;
+        currentNode = currentNode->right_sibling;
+    }
+
+    return root;
+}
+
 
 
 int main() {
@@ -365,16 +400,16 @@ int main() {
     string deepest_file_path;
     vector<DirectoryInfo> directories;
 
-    cout << "正在扫描..." << endl;
-    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
-    // 写入文件信息到文件
-    writeToFile("D:/myfile.txt", files);
-    // 写入目录信息到文件
-    writeDirToFile("D:/mydir.txt", directories);
-    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-    cout << "深度最深的文件信息：" << endl;
-    cout << "最大深度: " << deepest_file_depth << endl;
-    cout << "文件路径及名字: " << deepest_file_path << endl;
+    //cout << "正在扫描..." << endl;
+    //scan("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    //// 写入文件信息到文件
+    //writeFile("D:/myfile.txt", files);
+    //// 写入目录信息到文件
+    //writeDir("D:/mydir.txt", directories);
+    //cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+    //cout << "深度最深的文件信息：" << endl;
+    //cout << "最大深度: " << deepest_file_depth << endl;
+    //cout << "文件路径及名字: " << deepest_file_path << endl;
 
     cout << "正在建树。" << endl;
     // 构建二叉树
@@ -389,7 +424,7 @@ int main() {
     root->latest_file.last_write_time = 0; // 初始化为最小时间
     root->left_child = nullptr;
     root->right_sibling = nullptr;
-    buildBinaryTree("C:\\Windows", root); // 构建二叉树
+    buildTree("C:\\Windows", root); // 构建二叉树
     cout << "二叉树构建完成。" << endl;
     int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
     cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
@@ -404,7 +439,34 @@ int main() {
             return 0;
          case 1:
              // 调用循环函数查询目录信息
-             printDirectoryInfoLoop(root);
+             printLoop(root);
+             break;
+         case 3: {
+             // 模拟目录操作
+             while (true) {
+                 string input;
+                 cout << "请输入目录名,操作,时间,大小:";
+                 cin >> input;
+
+                 // 如果用户输入"0"则返回功能选择界面
+                 if (input == "0") {
+                     break;
+                 }
+
+                 // 将用户输入的字符串分割成目录名和操作
+                 size_t pos = input.find(',');
+                 if (pos != string::npos) {
+                     string pathname = input.substr(0, pos);
+                     string operation = input.substr(pos + 1);
+                     root = dirop(root, pathname); // 更新根节点指针
+                 }
+                 else {
+                     cout << "输入无效，请重新输入！" << endl;
+                 }
+             }
+             break;
+         }
+
          default:
             cout << "无效指令，请重新输入！" << endl;
             break;
