@@ -95,6 +95,7 @@ bool compareTime(const time_t& time1, const time_t& time2) {
 void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
     stack<pair<fs::path, DirectoryInfo*>> nodeStack;
     nodeStack.push({ rootDirectory, root });
+
     while (!nodeStack.empty()) {
         fs::path currentPath = nodeStack.top().first;
         DirectoryInfo* currentNode = nodeStack.top().second;
@@ -106,19 +107,19 @@ void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
             for (const auto& entry : fs::directory_iterator(currentPath)) {
                 if (fs::is_directory(entry)) {
                     DirectoryInfo* newDirectory = new DirectoryInfo();
-                    newDirectory->pathname = entry.path().string()+"\\";
+                    newDirectory->pathname = entry.path().string() + "\\";
                     newDirectory->depth = currentNode->depth + 1;
                     newDirectory->file_count = 0;
                     newDirectory->parent_directory = currentNode->pathname;
                     newDirectory->total_file_size = 0;
-                   
+                    newDirectory->earliest_file.last_write_time = std::numeric_limits<time_t>::max(); // 初始化为最大时间
+                    newDirectory->latest_file.last_write_time = 0; // 初始化为最小时间
 
                     if (prevSibling) {
-                        newDirectory->td = prevSibling->td + 1;//非常关键
+                        newDirectory->td = prevSibling->td + 1; //非常关键
                         prevSibling->right_sibling = newDirectory;
                     }
                     else {
-                        //cout << newDirectory->pathname<<endl;
                         newDirectory->td = parent_td + 1;  // 子节点的 td 值比父节点的 td 值增加 1
                         currentNode->left_child = newDirectory;
                     }
@@ -130,6 +131,23 @@ void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
                 else {
                     ++currentNode->file_count;
                     currentNode->total_file_size += fs::file_size(entry.path());
+
+                    // 更新最早时间的文件和最晚时间的文件的信息
+                    FileInfo file_info;
+                    file_info.filename = entry.path().filename().string();
+                    file_info.path = entry.path().string();
+                    file_info.file_size = fs::file_size(entry.path());
+
+                    auto last_write_time = fs::last_write_time(entry.path());
+                    auto last_write_time_point = chrono::time_point_cast<chrono::system_clock::duration>(last_write_time - fs::file_time_type::clock::now() + chrono::system_clock::now());
+                    file_info.last_write_time = chrono::system_clock::to_time_t(last_write_time_point);
+
+                    if (compareTime(file_info.last_write_time, currentNode->earliest_file.last_write_time)) {
+                        currentNode->earliest_file = file_info;
+                    }
+                    if (compareTime(currentNode->latest_file.last_write_time, file_info.last_write_time)) {
+                        currentNode->latest_file = file_info;
+                    }
                 }
             }
         }
@@ -138,6 +156,7 @@ void buildBinaryTree(const fs::path& rootDirectory, DirectoryInfo* root) {
         }
     }
 }
+
 
 
 int findMaxTd(DirectoryInfo* root) {
@@ -356,6 +375,8 @@ int main() {
     root->file_count = 0;
     root->parent_directory = "";
     root->total_file_size = 0;
+    root->earliest_file.last_write_time = std::numeric_limits<time_t>::max(); // 初始化为最大时间
+    root->latest_file.last_write_time = 0; // 初始化为最小时间
     root->left_child = nullptr;
     root->right_sibling = nullptr;
     buildBinaryTree("C:\\Windows", root); // 构建二叉树
