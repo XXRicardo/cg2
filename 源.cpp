@@ -50,7 +50,17 @@ void writeToFile(const string& filename, const vector<FileInfo>& files) {
         outFile.close();
     }
 }
-
+void UI() {
+    cout << "***********************************************" << endl;
+    cout << "* ------------------------------------------- *" << endl;
+    cout << "*|    请选择您要执行的功能：                 |*" << endl;
+    cout << "*|    1.统计指定目录信息                     |*" << endl;
+    cout << "*|    2.模拟文件操作                         |*" << endl;
+    cout << "*|    3.模拟目录操作                         |*" << endl;
+    cout << "*|    0.退出程序                             |*" << endl;
+    cout << "* ------------------------------------------- *" << endl;
+    cout << "***********************************************" << endl;
+}
 // 修改后的函数，用于将目录信息写入文件，包括年月日时分秒格式的修改时间
 void writeDirToFile(const string& filename, const vector<DirectoryInfo>& dirs) {
     ofstream outFile(filename);
@@ -332,7 +342,7 @@ void printDirectoryInfoLoop(DirectoryInfo* root) {
     while (true) {
         // 获取用户输入的目录路径
         cout << "请输入带路径的目录名（输入0退出查询）: ";
-        getline(cin, inputPath);
+        cin >> inputPath;
 
         // 如果用户输入"0"则退出查询
         if (inputPath == "0") {
@@ -355,16 +365,16 @@ int main() {
     string deepest_file_path;
     vector<DirectoryInfo> directories;
 
-    //cout << "正在扫描..." << endl;
-    //traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
-    //// 写入文件信息到文件
-    //writeToFile("D:/myfile.txt", files);
-    //// 写入目录信息到文件
-    //writeDirToFile("D:/mydir.txt", directories);
-    //cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-    //cout << "深度最深的文件信息：" << endl;
-    //cout << "最大深度: " << deepest_file_depth << endl;
-    //cout << "文件路径及名字: " << deepest_file_path << endl;
+    cout << "正在扫描..." << endl;
+    traverse("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    // 写入文件信息到文件
+    writeToFile("D:/myfile.txt", files);
+    // 写入目录信息到文件
+    writeDirToFile("D:/mydir.txt", directories);
+    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+    cout << "深度最深的文件信息：" << endl;
+    cout << "最大深度: " << deepest_file_depth << endl;
+    cout << "文件路径及名字: " << deepest_file_path << endl;
 
     cout << "正在建树。" << endl;
     // 构建二叉树
@@ -383,8 +393,23 @@ int main() {
     cout << "二叉树构建完成。" << endl;
     int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
     cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
-    // 调用循环函数查询目录信息
-    printDirectoryInfoLoop(root);
+    while (1) {
+        UI();
+        cout << "请输入指令:";
+        int zhiling;
+        cin >> zhiling;
+        switch (zhiling)
+        {
+         case 0:
+            return 0;
+         case 1:
+             // 调用循环函数查询目录信息
+             printDirectoryInfoLoop(root);
+         default:
+            cout << "无效指令，请重新输入！" << endl;
+            break;
+        }
 
+    }
     return 0;
 }
