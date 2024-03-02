@@ -398,8 +398,7 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
                     sl << put_time(latest_time, "%Y-%m-%d %H:%M:%S");
                     outFile << "最后修改时间: " << sl.str() << endl;
                 }
-                outFile << endl;
-                outFile.close();
+                outFile << endl;            
             }
             // 删除目标节点以及其子节点
             if (parentNode)
@@ -411,6 +410,11 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
             flag = 1;
             cout << "成功删除目录 " << targetPath << " 及其子目录" << endl;
             cout << endl;
+            if (outFile.is_open()) {
+                outFile << "修改后未找到目录节点信息！" << endl;
+                outFile <<"----------------------------------------" << endl;
+            }
+            if (outFile.is_open())outFile.close();
             return;
         }
 
@@ -467,6 +471,10 @@ int main() {
     cout << "二叉树构建完成。" << endl;
     int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
     cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
+
+    ofstream file("D:/dirbijiao.txt", ios::trunc);
+    if (file.is_open())file.close();
+    
     while (1) {
         UI();
         cout << "请输入指令:";
