@@ -36,7 +36,6 @@ struct DirectoryInfo {
 
     DirectoryInfo() : left_child(nullptr), right_sibling(nullptr),td(0) {} // 构造函数初始化指针
 };
-string dirpath=" ";
 // 原有的函数，用于写入文件信息
 void writeFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
@@ -70,19 +69,19 @@ void writeDir(const string& filename, const vector<DirectoryInfo>& dirs) {
     if (outFile.is_open()) {
         for (const auto& dir : dirs) {
             // 格式化最早时间的文件的修改时间（年月日时分秒）
-            std::tm* earliest_time = std::localtime(&dir.earliest_file.last_write_time);
-            std::stringstream earliest_time_str;
+            tm* earliest_time = localtime(&dir.earliest_file.last_write_time);
+            stringstream earliest_time_str;
             if (earliest_time) {
-                earliest_time_str << std::put_time(earliest_time, "%Y-%m-%d %H:%M:%S");
+                earliest_time_str << put_time(earliest_time, "%Y-%m-%d %H:%M:%S");
             }
             else {
                 earliest_time_str << "Invalid Time"; // 如果时间无效，则输出错误信息
             }
             // 格式化最晚时间的文件的修改时间（年月日时分秒）
-            std::tm* latest_time = std::localtime(&dir.latest_file.last_write_time);
-            std::stringstream latest_time_str;
+            tm* latest_time = localtime(&dir.latest_file.last_write_time);
+            stringstream latest_time_str;
             if (latest_time) {
-                latest_time_str << std::put_time(latest_time, "%Y-%m-%d %H:%M:%S");
+                latest_time_str << put_time(latest_time, "%Y-%m-%d %H:%M:%S");
             }
             else {
                 latest_time_str << "Invalid Time"; // 如果时间无效，则输出错误信息
@@ -275,10 +274,6 @@ void scan(const fs::path& directory, int& file_count, int& dir_count, vector<Fil
 }
 
 void printDir(const string& inputPath, DirectoryInfo* root) {
-    if (inputPath == dirpath) {
-        cout << "未找到目标目录节点！" << endl;
-        return;
-    }
     string targetPath = inputPath;
     // 找到对应的节点
     DirectoryInfo* targetNode = nullptr;
@@ -308,12 +303,12 @@ void printDir(const string& inputPath, DirectoryInfo* root) {
         cout << "文件总大小: " << targetNode->total_file_size << " 字节" << endl;
 
         // 打印最早修改时间的文件信息
-        std::tm* earliest_time = std::localtime(&targetNode->earliest_file.last_write_time);
+        tm* earliest_time = std::localtime(&targetNode->earliest_file.last_write_time);
         if (earliest_time) {
             cout << "最早文件信息: " << endl;
-            std::stringstream ss;
-            ss << std::put_time(earliest_time, "%Y-%m-%d %H:%M:%S");
-            std::cout << "最后修改时间: " << ss.str() << std::endl;
+            stringstream ss;
+            ss << put_time(earliest_time, "%Y-%m-%d %H:%M:%S");
+            cout << "最后修改时间: " << ss.str() << endl;
             cout << "文件名: " << targetNode->earliest_file.filename << endl;
             cout << "文件大小: " << targetNode->earliest_file.file_size << " 字节" << endl;
         }
@@ -322,12 +317,12 @@ void printDir(const string& inputPath, DirectoryInfo* root) {
         }
 
         // 打印最晚修改时间的文件信息
-        std::tm* latest_time = std::localtime(&targetNode->latest_file.last_write_time);
+        tm* latest_time = std::localtime(&targetNode->latest_file.last_write_time);
         if (latest_time) {
             cout << "最晚文件信息: " << endl;
-            std::stringstream ss;
-            ss << std::put_time(latest_time, "%Y-%m-%d %H:%M:%S");
-            std::cout << "最后修改时间: " << ss.str() << std::endl;
+            stringstream ss;
+            ss << put_time(latest_time, "%Y-%m-%d %H:%M:%S");
+            cout << "最后修改时间: " << ss.str() << endl;
             cout << "文件名: " << targetNode->latest_file.filename << endl;
             cout << "文件大小: " << targetNode->latest_file.file_size << " 字节" << endl;
         }
@@ -338,6 +333,7 @@ void printDir(const string& inputPath, DirectoryInfo* root) {
     else {
         cout << "未找到目标目录节点！" << endl;
     }
+    cout << endl;
 }
 
 
@@ -368,16 +364,43 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
 
     DirectoryInfo* parentNode = nullptr;
     DirectoryInfo* currentNode = nullptr;
+    int flag = 0;
 
     while (!q.empty()) {
         currentNode = q.front();
         q.pop();
 
         if (currentNode->pathname == targetPath) {
-            // 先打印目标节点的信息
-            printDir(targetPath, currentNode);
-            cout << endl;
+            // 将目录节点的信息写入文件
+            ofstream outFile("D:/dirbijiao.txt",ios::app);
+            if (outFile.is_open()) {
+                outFile << "修改前目录信息: " << endl;
+                outFile << "带路径的目录名: " << currentNode->pathname << endl;
+                outFile << "文件总数: " << currentNode->file_count << endl;
 
+                outFile << "最早文件信息:" << endl;
+                outFile << "文件名: " << currentNode->earliest_file.filename << endl;
+                outFile << "文件大小: " << currentNode->earliest_file.file_size << " bytes" << endl;
+
+                tm* earliest_time = std::localtime(&currentNode->earliest_file.last_write_time);
+                if (earliest_time) {
+                    stringstream se;
+                    se << put_time(earliest_time, "%Y-%m-%d %H:%M:%S");
+                    outFile << "最后修改时间: " << se.str() << endl;
+                }
+                outFile << "最晚文件信息:" << endl;
+                outFile << "文件名: " << currentNode->latest_file.filename << endl;
+                outFile << "文件大小: " << currentNode->latest_file.file_size << " bytes" << endl;
+
+                tm* latest_time = std::localtime(&currentNode->latest_file.last_write_time);
+                if (latest_time) {
+                    stringstream sl;
+                    sl << put_time(latest_time, "%Y-%m-%d %H:%M:%S");
+                    outFile << "最后修改时间: " << sl.str() << endl;
+                }
+                outFile << endl;
+                outFile.close();
+            }
             // 删除目标节点以及其子节点
             if (parentNode)
                 parentNode->right_sibling = currentNode->right_sibling;
@@ -385,6 +408,7 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
                 root = currentNode->right_sibling; // 更新根节点指针
 
             delete currentNode;
+            flag = 1;
             cout << "成功删除目录 " << targetPath << " 及其子目录" << endl;
             cout << endl;
             return;
@@ -397,6 +421,9 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
         }
 
         parentNode = currentNode;
+    }
+    if (!flag) {
+        cout << "未找到目标目录节点！" << endl;
     }
 }
 
@@ -422,7 +449,7 @@ int main() {
     //cout << "深度最深的文件信息：" << endl;
     //cout << "最大深度: " << deepest_file_depth << endl;
     //cout << "文件路径及名字: " << deepest_file_path << endl;
-
+    //cout << endl;
     cout << "正在建树。" << endl;
     // 构建二叉树
     DirectoryInfo* root = new DirectoryInfo(); // 创建根节点
@@ -457,7 +484,7 @@ int main() {
              // 模拟目录操作
              while (true) {
                  string input;
-                 cout << "请输入目录名,操作,时间,大小:";
+                 cout << "请输入目录名,操作,时间,大小(按0退出):";
                  cin >> input;
 
                  // 如果用户输入"0"则返回功能选择界面
