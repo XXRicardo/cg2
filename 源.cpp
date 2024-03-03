@@ -705,6 +705,19 @@ int main() {
     cout << "文件路径及名字: " << deepest_file_path << endl;
     cout << endl;
 
+    ofstream filetjt("D:/tongji.txt", ios::trunc);
+    if (filetjt.is_open())filetjt.close();
+    ofstream filetj("D:/tongji.txt", ios::app);//一共三次统计,第一次
+    if (filetj.is_open()) {
+        filetj << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+        filetj << "深度最深的文件信息：" << endl;
+        filetj << "最大深度: " << deepest_file_depth << endl;
+        filetj << "文件路径及名字: " << deepest_file_path << endl;
+        filetj <<"----------------------------------------" << endl;
+    }
+    if (filetj.is_open())filetj.close();
+
+
     cout << "正在建树。" << endl;
     // 构建二叉树
     DirectoryInfo* root = new DirectoryInfo(); // 创建根节点
@@ -799,5 +812,6 @@ int main() {
         }
 
     }
+    if (filetj.is_open())filetj.close();
     return 0;
 }
