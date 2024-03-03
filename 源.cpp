@@ -430,74 +430,87 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
 }
 
 void fileop(vector<FileInfo>& files, const string& filename, const string& operation, const string& lastWriteTime, const string& size) {
-    // 计算文件路径的深度
     int dep = count(filename.begin(), filename.end(), '\\');
-
-    // 找到深度符合要求的文件
     vector<FileInfo> matchedFiles;
+    // 找到深度相同的文件
     for (const auto& file : files) {
         if (file.depth == dep) {
             matchedFiles.push_back(file);
         }
     }
 
-    // 根据操作类型进行相应操作
-    if (operation == "A") { // 新增文件
-        // 转换时间和大小的字符串为对应的类型
-        long int lastWriteTimeInt = stol(lastWriteTime);
-        uintmax_t sizeInt = stoull(size);
-
-        // 添加新文件信息
-        FileInfo newFile;
-        newFile.filename = filename;
-        newFile.depth = dep;
-        newFile.last_write_time = lastWriteTimeInt;
-        newFile.file_size = sizeInt;
-
-        // 将新文件信息加入到文件列表中
-        files.push_back(newFile);
-        cout << "文件新增成功" << endl;
-    }
-    else if (operation == "D") { // 删除文件
-        // 查找文件名匹配的文件
-        bool found = false;
+    // 判断操作类型
+    if (operation == "D") {
+        // 删除文件
+        bool deleted = false;
         for (auto it = files.begin(); it != files.end(); ++it) {
-            if (it->filename == filename && it->depth == dep) {
+            if (it->depth == dep && it->filename == filename) {
                 files.erase(it);
-                cout << "文件删除成功" << endl;
-                found = true;
+                deleted = true;
                 break;
             }
         }
-        if (!found) {
-            cout << "未找到目标文件，操作失败" << endl;
+        if (deleted) {
+            cout << "文件删除成功" << endl;
+            cout << endl;
+        }
+        else {
+            cout << "文件不存在，删除失败" << endl;
+            cout << endl;
         }
     }
-    else if (operation == "M") { // 修改文件
-        // 转换时间和大小的字符串为对应的类型
-        long int lastWriteTimeInt = stol(lastWriteTime);
-        uintmax_t sizeInt = stoull(size);
-
-        // 查找文件名匹配的文件
-        bool found = false;
+    else if (operation == "M") {
+        // 修改文件属性
+        bool modified = false;
         for (auto& file : files) {
-            if (file.filename == filename && file.depth == dep) {
-                // 更新文件的时间和大小属性
-                file.last_write_time = lastWriteTimeInt;
-                file.file_size = sizeInt;
-                cout << "文件修改成功" << endl;
-                found = true;
+            if (file.depth == dep && file.filename == filename) {
+                // 修改最后修改时间和大小
+                file.last_write_time = stol(lastWriteTime);
+                file.file_size = stoul(size);
+                modified = true;
                 break;
             }
         }
-        if (!found) {
-            cout << "未找到目标文件，操作失败" << endl;
+        if (modified) {
+            cout << "文件属性修改成功" << endl;
+            cout << endl;
+        }
+        else {
+            cout << "文件不存在，修改失败" << endl;
+            cout << endl;
+        }
+    }
+    else if (operation == "A") {
+        // 新增文件
+        bool exists = false;
+        for (const auto& file : matchedFiles) {
+            if (file.filename == filename) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            // 文件不存在，执行新增操作
+            FileInfo newFile;
+            newFile.filename = filename;
+            newFile.depth = dep;
+            newFile.last_write_time = stol(lastWriteTime);
+            newFile.file_size = stoul(size);
+            files.push_back(newFile);
+            cout << "文件新增成功" << endl;
+            cout << endl;
+        }
+        else {
+            cout << "文件已存在，新增失败" << endl;
+            cout << endl;
         }
     }
     else {
-        cout << "未知操作类型，操作失败" << endl;
+        cout << "无效的操作类型" << endl;
+        cout << endl;
     }
 }
+
 
 
 
@@ -560,8 +573,7 @@ int main() {
            while(true){
              string input;
              cout << "请输入文件名,操作,时间,大小(按0退出):";
-             cin.ignore();
-             getline(cin, input);
+             cin >> input;
 
              // 如果用户输入"0"则返回功能选择界面
              if (input == "0") {
