@@ -6,7 +6,8 @@
 #include <chrono>
 #include <vector>
 #include <fstream>
-#include <iomanip> // 添加头文件以使用 std::put_time
+#include <iomanip> 
+#include <algorithm> 
 
 namespace fs = std::filesystem;
 using namespace std;
@@ -376,7 +377,7 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
                 outFile << "带路径的目录名: " << currentNode->pathname << endl;
                 outFile << "文件总数: " << currentNode->file_count << endl;
 
-                outFile << "最早文件信息:" << endl;
+                outFile << "最早文件信息: " << endl;
                 outFile << "文件名: " << currentNode->earliest_file.filename << endl;
                 outFile << "文件大小: " << currentNode->earliest_file.file_size << " bytes" << endl;
 
@@ -386,7 +387,7 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
                     se << put_time(earliest_time, "%Y-%m-%d %H:%M:%S");
                     outFile << "最后修改时间: " << se.str() << endl;
                 }
-                outFile << "最晚文件信息:" << endl;
+                outFile << "最晚文件信息: " << endl;
                 outFile << "文件名: " << currentNode->latest_file.filename << endl;
                 outFile << "文件大小: " << currentNode->latest_file.file_size << " bytes" << endl;
 
@@ -429,24 +430,60 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
     }
 }
 
-void fileop(vector<FileInfo>& files, const string& filename, const string& operation, const string& lastWriteTime, const string& size) {
-    int dep = count(filename.begin(), filename.end(), '\\');
+void fileop(vector<FileInfo>& files, const string& fullFilename, const string& operation, const string& lastWriteTime, const string& size) {
+    // 拆分带路径的文件名
+    size_t lastBackslashPos = fullFilename.find_last_of("\\");
+    string path = fullFilename.substr(0, lastBackslashPos + 1); // 文件路径
+    string filename = fullFilename.substr(lastBackslashPos + 1); // 文件名
+
+    ofstream outputFile("D:/filebijiao.txt", ios::app);
+
+    int dep = count(path.begin(), path.end(), '\\');
     vector<FileInfo> matchedFiles;
+
     // 找到深度相同的文件
     for (const auto& file : files) {
         if (file.depth == dep) {
             matchedFiles.push_back(file);
         }
     }
-
     // 判断操作类型
     if (operation == "D") {
         // 删除文件
+        if (outputFile.is_open()) {
+            // 在 matchedFiles 中查找对应的文件
+            bool found = false;
+            for (const auto file : matchedFiles) {
+                if (file.filename == filename) {
+                    // 找到文件，将五个信息追加写入文件
+                    outputFile << "文件名: " << file.filename << endl;
+                    outputFile << "文件路径: " << file.path << endl;
+                    outputFile << "文件最后修改时间: " << file.last_write_time << endl;
+                    outputFile << "文件大小: " << file.file_size << endl;
+                    outputFile << "文件深度: " << file.depth << endl;
+                    outputFile << endl;
+                    found = true;
+                    break;
+                }
+            }
+
+            // 如果未找到文件，则写入 "文件不存在" 到文件中
+            if (!found) {
+                outputFile << "文件不存在" << endl;
+                outputFile << endl;
+            }
+        }
         bool deleted = false;
         for (auto it = files.begin(); it != files.end(); ++it) {
             if (it->depth == dep && it->filename == filename) {
                 files.erase(it);
                 deleted = true;
+                break;
+            }
+        }
+        for (auto mit = matchedFiles.begin(); mit != matchedFiles.end(); ++mit) {
+            if ( mit->filename == filename) {
+                matchedFiles.erase(mit);
                 break;
             }
         }
@@ -458,9 +495,58 @@ void fileop(vector<FileInfo>& files, const string& filename, const string& opera
             cout << "文件不存在，删除失败" << endl;
             cout << endl;
         }
+        if (outputFile.is_open()) {
+            // 在 matchedFiles 中查找对应的文件
+            bool found = false;
+            for (const auto file : matchedFiles) {
+                if (file.filename == filename) {
+                    // 找到文件，将五个信息追加写入文件
+                    outputFile << "文件名: " << file.filename << endl;
+                    outputFile << "文件路径: " << file.path << endl;
+                    outputFile << "文件最后修改时间: " << file.last_write_time << endl;
+                    outputFile << "文件大小: " << file.file_size << endl;
+                    outputFile << "文件深度: " << file.depth << endl;
+                    outputFile <<"---------------------------------------------" << endl;
+                    found = true;
+                    break;
+                }
+            }
+
+            // 如果未找到文件，则写入 "文件不存在" 到文件中
+            if (!found) {
+                outputFile << "文件不存在" << endl;
+                outputFile << "---------------------------------------------" << endl;
+            }
+        }
+        
+        
     }
     else if (operation == "M") {
         // 修改文件属性
+        
+        if (outputFile.is_open()) {
+            // 在 matchedFiles 中查找对应的文件
+            bool found = false;
+            for (const auto file : matchedFiles) {
+                if (file.filename == filename) {
+                    // 找到文件，将五个信息追加写入文件
+                    outputFile << "文件名: " << file.filename << endl;
+                    outputFile << "文件路径: " << file.path << endl;
+                    outputFile << "文件最后修改时间: " << file.last_write_time << endl;
+                    outputFile << "文件大小: " << file.file_size << endl;
+                    outputFile << "文件深度: " << file.depth << endl;
+                    outputFile << endl;
+                    found = true;
+                    break;
+                }
+            }
+
+            // 如果未找到文件，则写入 "文件不存在" 到文件中
+            if (!found) {
+                outputFile << "文件不存在" << endl;
+                outputFile << endl;
+            }
+        }
         bool modified = false;
         for (auto& file : files) {
             if (file.depth == dep && file.filename == filename) {
@@ -468,6 +554,14 @@ void fileop(vector<FileInfo>& files, const string& filename, const string& opera
                 file.last_write_time = stol(lastWriteTime);
                 file.file_size = stoul(size);
                 modified = true;
+                break;
+            }
+        }
+        for (auto& mfile : matchedFiles) {
+            if ( mfile.filename == filename) {
+                // 修改最后修改时间和大小
+                mfile.last_write_time = stol(lastWriteTime);
+                mfile.file_size = stoul(size);
                 break;
             }
         }
@@ -479,9 +573,57 @@ void fileop(vector<FileInfo>& files, const string& filename, const string& opera
             cout << "文件不存在，修改失败" << endl;
             cout << endl;
         }
+        if (outputFile.is_open()) {
+            // 在 matchedFiles 中查找对应的文件
+            bool found = false;
+            for (const auto file : matchedFiles) {
+                if (file.filename == filename) {
+                    // 找到文件，将五个信息追加写入文件
+                    outputFile << "文件名: " << file.filename << endl;
+                    outputFile << "文件路径: " << file.path << endl;
+                    outputFile << "文件最后修改时间: " << file.last_write_time << endl;
+                    outputFile << "文件大小: " << file.file_size << endl;
+                    outputFile << "文件深度: " << file.depth << endl;
+                    outputFile << "---------------------------------------------" << endl;
+                    found = true;
+                    break;
+                }
+            }
+
+            // 如果未找到文件，则写入 "文件不存在" 到文件中
+            if (!found) {
+                outputFile << "文件不存在" << endl;
+                outputFile << "---------------------------------------------" << endl;
+            }
+        }
+        
     }
     else if (operation == "A") {
         // 新增文件
+        
+        if (outputFile.is_open()) {
+            // 在 matchedFiles 中查找对应的文件
+            bool found = false;
+            for (const auto file : matchedFiles) {
+                if (file.filename == filename) {
+                    // 找到文件，将五个信息追加写入文件
+                    outputFile << "文件名: " << file.filename << endl;
+                    outputFile << "文件路径: " << file.path << endl;
+                    outputFile << "文件最后修改时间: " << file.last_write_time << endl;
+                    outputFile << "文件大小: " << file.file_size << endl;
+                    outputFile << "文件深度: " << file.depth << endl;
+                    outputFile << endl;
+                    found = true;
+                    break;
+                }
+            }
+
+            // 如果未找到文件，则写入 "文件不存在" 到文件中
+            if (!found) {
+                outputFile << "文件不存在" << endl;
+                outputFile << endl;
+            }
+        }
         bool exists = false;
         for (const auto& file : matchedFiles) {
             if (file.filename == filename) {
@@ -493,10 +635,12 @@ void fileop(vector<FileInfo>& files, const string& filename, const string& opera
             // 文件不存在，执行新增操作
             FileInfo newFile;
             newFile.filename = filename;
+            newFile.path = path; // 将路径赋值给文件信息结构体中的path成员
             newFile.depth = dep;
             newFile.last_write_time = stol(lastWriteTime);
             newFile.file_size = stoul(size);
             files.push_back(newFile);
+            matchedFiles.push_back(newFile);
             cout << "文件新增成功" << endl;
             cout << endl;
         }
@@ -504,11 +648,37 @@ void fileop(vector<FileInfo>& files, const string& filename, const string& opera
             cout << "文件已存在，新增失败" << endl;
             cout << endl;
         }
+        if (outputFile.is_open()) {
+            // 在 matchedFiles 中查找对应的文件
+            bool found = false;
+            for (const auto file : matchedFiles) {
+                if (file.filename == filename) {
+                    // 找到文件，将五个信息追加写入文件
+                    outputFile << "文件名: " << file.filename << endl;
+                    outputFile << "文件路径: " << file.path << endl;
+                    outputFile << "文件最后修改时间: " << file.last_write_time << endl;
+                    outputFile << "文件大小: " << file.file_size << endl;
+                    outputFile << "文件深度: " << file.depth << endl;
+                    outputFile << "---------------------------------------------" << endl;
+                    found = true;
+                    break;
+                }
+            }
+
+            // 如果未找到文件，则写入 "文件不存在" 到文件中
+            if (!found) {
+                outputFile << "文件不存在" << endl;
+                outputFile << "---------------------------------------------" << endl;
+            }
+        }
+        
+        
     }
     else {
         cout << "无效的操作类型" << endl;
         cout << endl;
     }
+    if (outputFile.is_open())outputFile.close();
 }
 
 
@@ -552,6 +722,9 @@ int main() {
     //cout << "二叉树构建完成。" << endl;
     //int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
     //cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
+
+    ofstream filet("D:/filebijiao.txt", ios::trunc);
+    if (filet.is_open())filet.close();
 
     ofstream file("D:/dirbijiao.txt", ios::trunc);
     if (file.is_open())file.close();
