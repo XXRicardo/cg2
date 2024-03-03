@@ -98,7 +98,6 @@ void writeDir(const string& filename, const vector<DirectoryInfo>& dirs) {
     }
 }
 
-
 // 比较两个时间点的先后顺序
 bool compareTime(const time_t& time1, const time_t& time2) {
     return difftime(time1, time2) < 0;
@@ -336,7 +335,6 @@ void printDir(const string& inputPath, DirectoryInfo* root) {
     cout << endl;
 }
 
-
 void printLoop(DirectoryInfo*& root) {
     string inputPath;
     while (true) {
@@ -431,6 +429,75 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
     }
 }
 
+void fileop(vector<FileInfo>& files, const string& filename, const string& operation, const string& lastWriteTime, const string& size) {
+    // 计算文件路径的深度
+    int dep = count(filename.begin(), filename.end(), '\\');
+
+    // 找到深度符合要求的文件
+    vector<FileInfo> matchedFiles;
+    for (const auto& file : files) {
+        if (file.depth == dep) {
+            matchedFiles.push_back(file);
+        }
+    }
+
+    // 根据操作类型进行相应操作
+    if (operation == "A") { // 新增文件
+        // 转换时间和大小的字符串为对应的类型
+        long int lastWriteTimeInt = stol(lastWriteTime);
+        uintmax_t sizeInt = stoull(size);
+
+        // 添加新文件信息
+        FileInfo newFile;
+        newFile.filename = filename;
+        newFile.depth = dep;
+        newFile.last_write_time = lastWriteTimeInt;
+        newFile.file_size = sizeInt;
+
+        // 将新文件信息加入到文件列表中
+        files.push_back(newFile);
+        cout << "文件新增成功" << endl;
+    }
+    else if (operation == "D") { // 删除文件
+        // 查找文件名匹配的文件
+        bool found = false;
+        for (auto it = files.begin(); it != files.end(); ++it) {
+            if (it->filename == filename && it->depth == dep) {
+                files.erase(it);
+                cout << "文件删除成功" << endl;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            cout << "未找到目标文件，操作失败" << endl;
+        }
+    }
+    else if (operation == "M") { // 修改文件
+        // 转换时间和大小的字符串为对应的类型
+        long int lastWriteTimeInt = stol(lastWriteTime);
+        uintmax_t sizeInt = stoull(size);
+
+        // 查找文件名匹配的文件
+        bool found = false;
+        for (auto& file : files) {
+            if (file.filename == filename && file.depth == dep) {
+                // 更新文件的时间和大小属性
+                file.last_write_time = lastWriteTimeInt;
+                file.file_size = sizeInt;
+                cout << "文件修改成功" << endl;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            cout << "未找到目标文件，操作失败" << endl;
+        }
+    }
+    else {
+        cout << "未知操作类型，操作失败" << endl;
+    }
+}
 
 
 
@@ -443,17 +510,18 @@ int main() {
     string deepest_file_path;
     vector<DirectoryInfo> directories;
 
-    //cout << "正在扫描..." << endl;
-    //scan("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    cout << "正在扫描..." << endl;
+    scan("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
     //// 写入文件信息到文件
     //writeFile("D:/myfile.txt", files);
     //// 写入目录信息到文件
     //writeDir("D:/mydir.txt", directories);
-    //cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-    //cout << "深度最深的文件信息：" << endl;
-    //cout << "最大深度: " << deepest_file_depth << endl;
-    //cout << "文件路径及名字: " << deepest_file_path << endl;
-    //cout << endl;
+    cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+    cout << "深度最深的文件信息：" << endl;
+    cout << "最大深度: " << deepest_file_depth << endl;
+    cout << "文件路径及名字: " << deepest_file_path << endl;
+    cout << endl;
+
     cout << "正在建树。" << endl;
     // 构建二叉树
     DirectoryInfo* root = new DirectoryInfo(); // 创建根节点
@@ -467,10 +535,10 @@ int main() {
     root->latest_file.last_write_time = 0; // 初始化为最小时间
     root->left_child = nullptr;
     root->right_sibling = nullptr;
-    buildTree("C:\\Windows", root); // 构建二叉树
-    cout << "二叉树构建完成。" << endl;
-    int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
-    cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
+    //buildTree("C:\\Windows", root); // 构建二叉树
+    //cout << "二叉树构建完成。" << endl;
+    //int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
+    //cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
 
     ofstream file("D:/dirbijiao.txt", ios::trunc);
     if (file.is_open())file.close();
@@ -488,6 +556,32 @@ int main() {
              // 调用循环函数查询目录信息
              printLoop(root);
              break;
+         case 2: {
+           while(true){
+             string input;
+             cout << "请输入文件名,操作,时间,大小(按0退出):";
+             cin.ignore();
+             getline(cin, input);
+
+             // 如果用户输入"0"则返回功能选择界面
+             if (input == "0") {
+                 break;
+             }
+
+             // 将用户输入的字符串分割成文件名、操作、时间和大小
+             stringstream ss(input);
+             string filePath, operation, lastWriteTimeStr, sizeStr;
+             getline(ss, filePath, ',');
+             getline(ss, operation, ',');
+             getline(ss, lastWriteTimeStr, ',');
+             getline(ss, sizeStr, ',');
+
+             // 调用文件操作函数
+             fileop(files, filePath, operation, lastWriteTimeStr, sizeStr);
+            }
+             break;
+         }
+
          case 3: {
              // 模拟目录操作
              while (true) {
