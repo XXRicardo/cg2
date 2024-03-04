@@ -37,6 +37,7 @@ struct DirectoryInfo {
 
     DirectoryInfo() : left_child(nullptr), right_sibling(nullptr),td(0) {} // 构造函数初始化指针
 };
+int file_count = 0,dir_count = 0;
 // 原有的函数，用于写入文件信息
 void writeFile(const string& filename, const vector<FileInfo>& files) {
     ofstream outFile(filename);
@@ -199,7 +200,7 @@ int findMaxTd(DirectoryInfo* root) {
 }
 
 // 用于遍历目录并收集信息
-void scan(const fs::path& directory, int& file_count, int& dir_count, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
+void scan(const fs::path& directory, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
     stack<pair<fs::path, int>> dirs; // pair中的第二项表示目录的深度
     dirs.push({ directory, 0 });
 
@@ -404,8 +405,10 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
                 parentNode->right_sibling = currentNode->right_sibling;
             else
                 root = currentNode->right_sibling; // 更新根节点指针
-
+            file_count -= currentNode->file_count;
             delete currentNode;
+            dir_count--;
+
             flag = 1;
             cout << "成功删除目录 " << targetPath << " 及其子目录" << endl;
             cout << endl;
@@ -490,6 +493,7 @@ void fileop(vector<FileInfo>& files, const string& fullFilename, const string& o
         }
         if (deleted) {
             cout << "文件删除成功" << endl;
+            file_count--;
             cout << endl;
         }
         else {
@@ -643,6 +647,7 @@ void fileop(vector<FileInfo>& files, const string& fullFilename, const string& o
             files.push_back(newFile);
             matchedFiles.push_back(newFile);
             cout << "文件新增成功" << endl;
+            file_count++;
             cout << endl;
         }
         else {
@@ -686,8 +691,7 @@ void fileop(vector<FileInfo>& files, const string& fullFilename, const string& o
 
 
 int main() {
-    int file_count = 0;
-    int dir_count = 0;
+
     vector<FileInfo> files;
     int max_depth = 0;
     int deepest_file_depth = 0;
@@ -695,7 +699,7 @@ int main() {
     vector<DirectoryInfo> directories;
 
     cout << "正在扫描..." << endl;
-    scan("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
+    scan("C:\\Windows", files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
     // 写入文件信息到文件
     writeFile("D:/myfile.txt", files);
     // 写入目录信息到文件
