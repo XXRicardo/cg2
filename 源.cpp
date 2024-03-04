@@ -708,15 +708,15 @@ int main() {
 
     ofstream filetjt("D:/tongji.txt", ios::trunc);
     if (filetjt.is_open())filetjt.close();
-    ofstream filetj("D:/tongji.txt", ios::app);//一共三次统计,第一次
-    if (filetj.is_open()) {
-        filetj << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
-        filetj << "深度最深的文件信息：" << endl;
-        filetj << "最大深度: " << deepest_file_depth << endl;
-        filetj << "文件路径及名字: " << deepest_file_path << endl;
-        filetj <<"-------------------------------------------------------------------------------" << endl;
+    ofstream filetj1("D:/tongji.txt", ios::app);//一共三次统计,第一次
+    if (filetj1.is_open()) {
+        filetj1 << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+        filetj1 << "深度最深的文件信息：" << endl;
+        filetj1 << "最大深度: " << deepest_file_depth << endl;
+        filetj1 << "文件路径及名字: " << deepest_file_path << endl;
+        filetj1 <<"-------------------------------------------------------------------------------" << endl;
     }
-    if (filetj.is_open())filetj.close();
+    if (filetj1.is_open())filetj1.close();
 
 
     cout << "正在建树。" << endl;
@@ -777,7 +777,16 @@ int main() {
 
              // 调用文件操作函数
              fileop(files, filePath, operation, lastWriteTimeStr, sizeStr);
-            }
+           }
+           ofstream filetj2("D:/tongji.txt", ios::app);//一共三次统计,第二次
+           if (filetj2.is_open()) {
+               filetj2 << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+               filetj2 << "深度最深的文件信息：" << endl;
+               filetj2 << "最大深度: " << deepest_file_depth << endl;
+               filetj2 << "文件路径及名字: " << deepest_file_path << endl;
+               filetj2 << "-------------------------------------------------------------------------------" << endl;
+           }
+           if (filetj2.is_open())filetj2.close();
              break;
          }
 
@@ -804,6 +813,15 @@ int main() {
                      cout << "输入无效，请重新输入！" << endl;
                  }
              }
+             ofstream filetj3("D:/tongji.txt", ios::app);//一共三次统计,第三次
+             if (filetj3.is_open()) {
+                 filetj3 << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
+                 filetj3 << "深度最深的文件信息：" << endl;
+                 filetj3 << "最大深度: " << deepest_file_depth << endl;
+                 filetj3 << "文件路径及名字: " << deepest_file_path << endl;
+                 filetj3 << "-------------------------------------------------------------------------------" << endl;
+             }
+             if (filetj3.is_open())filetj3.close();
              break;
          }
 
@@ -813,6 +831,5 @@ int main() {
         }
 
     }
-    if (filetj.is_open())filetj.close();
     return 0;
 }
