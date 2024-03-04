@@ -38,8 +38,9 @@ struct DirectoryInfo {
     DirectoryInfo() : left_child(nullptr), right_sibling(nullptr),td(0) {} // 构造函数初始化指针
 };
 int file_count = 0,dir_count = 0;
-// 原有的函数，用于写入文件信息
+// 用于写入文件信息
 void writeFile(const string& filename, const vector<FileInfo>& files) {
+    // 遍历文件信息并将每个文件的相关信息写入文件
     ofstream outFile(filename);
     if (outFile.is_open()) {
         for (const auto& file : files) {
@@ -65,8 +66,9 @@ void UI() {
     cout << "***********************************************" << endl;
     cout << endl;
 }
-// 修改后的函数，用于将目录信息写入文件，包括年月日时分秒格式的修改时间
+// 用于将目录信息写入文件
 void writeDir(const string& filename, const vector<DirectoryInfo>& dirs) {
+    // 遍历目录信息并将每个目录的相关信息写入文件
     ofstream outFile(filename);
     if (outFile.is_open()) {
         for (const auto& dir : dirs) {
@@ -99,13 +101,13 @@ void writeDir(const string& filename, const vector<DirectoryInfo>& dirs) {
         outFile.close();
     }
 }
-
 // 比较两个时间点的先后顺序
 bool compareTime(const time_t& time1, const time_t& time2) {
     return difftime(time1, time2) < 0;
 }
-
+//构建孩子兄弟树
 void buildTree(const fs::path& rootDirectory, DirectoryInfo* root) {
+    // 使用栈进行深度优先遍历
     stack<pair<fs::path, DirectoryInfo*>> nodeStack;
     nodeStack.push({ rootDirectory, root });
 
@@ -169,7 +171,7 @@ void buildTree(const fs::path& rootDirectory, DirectoryInfo* root) {
         }
     }
 }
-
+//用于寻找最大树深
 int findMaxTd(DirectoryInfo* root) {
     if (!root)
         return -1;
@@ -198,7 +200,6 @@ int findMaxTd(DirectoryInfo* root) {
 
     return maxTd*3;
 }
-
 // 用于遍历目录并收集信息
 void scan(const fs::path& directory, vector<FileInfo>& files, int& max_depth, int& deepest_file_depth, string& deepest_file_path, vector<DirectoryInfo>& directories) {
     stack<pair<fs::path, int>> dirs; // pair中的第二项表示目录的深度
@@ -273,7 +274,7 @@ void scan(const fs::path& directory, vector<FileInfo>& files, int& max_depth, in
         }
     }
 }
-
+//用于统计某个目录的信息,根据输入的目录路径查找对应的目录节点并打印信息
 void printDir(const string& inputPath, DirectoryInfo* root) {
     string targetPath = inputPath;
     // 找到对应的节点
@@ -336,7 +337,7 @@ void printDir(const string& inputPath, DirectoryInfo* root) {
     }
     cout << endl;
 }
-
+// 循环读取用户输入的目录路径，并调用打印目录信息函数
 void printLoop(DirectoryInfo*& root) {
     string inputPath;
     while (true) {
@@ -354,7 +355,7 @@ void printLoop(DirectoryInfo*& root) {
         printDir(inputPath, root);
     }
 }
-
+//模拟目录操作：在孩子兄弟树中查找并删除目标目录及其子目录
 void dirop(DirectoryInfo*& root, const string& targetPath) {
     if (!root)
         return;
@@ -432,7 +433,7 @@ void dirop(DirectoryInfo*& root, const string& targetPath) {
         cout << "未找到目标目录节点！" << endl;
     }
 }
-
+// 模拟文件操作：删除、修改和新增文件
 void fileop(vector<FileInfo>& files, const string& fullFilename, const string& operation, const string& lastWriteTime, const string& size) {
     // 拆分带路径的文件名
     size_t lastBackslashPos = fullFilename.find_last_of("\\");
