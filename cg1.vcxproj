@@ -131,7 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="imitate.cpp" />
-    <ClCompile Include="scan.cpp" />
+    <ClCompile Include="scan&amp;sql.cpp" />
     <ClCompile Include="statistics.cpp" />
     <ClCompile Include="tree.cpp" />
     <ClCompile Include="源.cpp" />

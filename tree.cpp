@@ -93,5 +93,5 @@ int findMaxTd(DirectoryInfo* root) {
         }
     }
 
-    return maxTd * 3;
+    return maxTd ;
 }
