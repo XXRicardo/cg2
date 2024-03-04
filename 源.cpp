@@ -295,13 +295,13 @@ void printDir(const string& inputPath, DirectoryInfo* root) {
             childNode = childNode->right_sibling;
         }
     }
-
+    int flag = 0;
     // 如果找到了目标节点，打印信息
     if (targetNode) {
         cout << "目录搜寻成功" << endl;
         cout << "文件总数为: " << targetNode->file_count << endl;
         cout << "文件总大小: " << targetNode->total_file_size << " 字节" << endl;
-
+        flag = 1;
         // 打印最早修改时间的文件信息
         tm* earliest_time = std::localtime(&targetNode->earliest_file.last_write_time);
         if (earliest_time) {
@@ -331,7 +331,7 @@ void printDir(const string& inputPath, DirectoryInfo* root) {
         }
     }
     else {
-        cout << "未找到目标目录节点！" << endl;
+        if (!flag)cout << "未找到目标目录节点！" << endl;
     }
     cout << endl;
 }
@@ -435,7 +435,7 @@ void fileop(vector<FileInfo>& files, const string& fullFilename, const string& o
     size_t lastBackslashPos = fullFilename.find_last_of("\\");
     string path = fullFilename.substr(0, lastBackslashPos + 1); // 文件路径
     string filename = fullFilename.substr(lastBackslashPos + 1); // 文件名
-
+    int flag = 0;
     ofstream outputFile("D:/filebijiao.txt", ios::app);
 
     int dep = count(path.begin(), path.end(), '\\');
@@ -450,6 +450,7 @@ void fileop(vector<FileInfo>& files, const string& fullFilename, const string& o
     // 判断操作类型
     if (operation == "D") {
         // 删除文件
+        flag = 1;
         if (outputFile.is_open()) {
             // 在 matchedFiles 中查找对应的文件
             bool found = false;
@@ -523,7 +524,7 @@ void fileop(vector<FileInfo>& files, const string& fullFilename, const string& o
     }
     else if (operation == "M") {
         // 修改文件属性
-        
+        flag = 1;
         if (outputFile.is_open()) {
             // 在 matchedFiles 中查找对应的文件
             bool found = false;
@@ -600,7 +601,7 @@ void fileop(vector<FileInfo>& files, const string& fullFilename, const string& o
     }
     else if (operation == "A") {
         // 新增文件
-        
+        flag = 1;
         if (outputFile.is_open()) {
             // 在 matchedFiles 中查找对应的文件
             bool found = false;
@@ -675,7 +676,7 @@ void fileop(vector<FileInfo>& files, const string& fullFilename, const string& o
         
     }
     else {
-        cout << "无效的操作类型" << endl;
+        if(!flag)cout << "无效的操作类型" << endl;
         cout << endl;
     }
     if (outputFile.is_open())outputFile.close();
@@ -695,10 +696,10 @@ int main() {
 
     cout << "正在扫描..." << endl;
     scan("C:\\Windows", file_count, dir_count, files, max_depth, deepest_file_depth, deepest_file_path, directories); // 扫描目录
-    //// 写入文件信息到文件
-    //writeFile("D:/myfile.txt", files);
-    //// 写入目录信息到文件
-    //writeDir("D:/mydir.txt", directories);
+    // 写入文件信息到文件
+    writeFile("D:/myfile.txt", files);
+    // 写入目录信息到文件
+    writeDir("D:/mydir.txt", directories);
     cout << "总共有 " << file_count << " 个文件和 " << dir_count << " 个目录。" << endl;
     cout << "深度最深的文件信息：" << endl;
     cout << "最大深度: " << deepest_file_depth << endl;
@@ -713,7 +714,7 @@ int main() {
         filetj << "深度最深的文件信息：" << endl;
         filetj << "最大深度: " << deepest_file_depth << endl;
         filetj << "文件路径及名字: " << deepest_file_path << endl;
-        filetj <<"----------------------------------------" << endl;
+        filetj <<"-------------------------------------------------------------------------------" << endl;
     }
     if (filetj.is_open())filetj.close();
 
@@ -731,10 +732,10 @@ int main() {
     root->latest_file.last_write_time = 0; // 初始化为最小时间
     root->left_child = nullptr;
     root->right_sibling = nullptr;
-    //buildTree("C:\\Windows", root); // 构建二叉树
-    //cout << "二叉树构建完成。" << endl;
-    //int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
-    //cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
+    buildTree("C:\\Windows", root); // 构建二叉树
+    cout << "二叉树构建完成。" << endl;
+    int maxTd = findMaxTd(root); // 找出所有节点中最大的 td 值
+    cout << "所有节点中最大的 td 值为: " << maxTd<< endl;
 
     ofstream filet("D:/filebijiao.txt", ios::trunc);
     if (filet.is_open())filet.close();
