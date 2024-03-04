@@ -1,0 +1,32 @@
+文件不存在
+
+文件名: AMFTrace.log2401
+文件路径: C:\Windows\
+文件最后修改时间: 1709118383
+文件大小: 3626
+文件深度: 2
+---------------------------------------------
+文件名: AMFTrace.log2401
+文件路径: C:\Windows\
+文件最后修改时间: 1709118383
+文件大小: 3626
+文件深度: 2
+
+文件名: AMFTrace.log2401
+文件路径: C:\Windows\
+文件最后修改时间: 1709115948
+文件大小: 5555
+文件深度: 2
+---------------------------------------------
+文件名: JumpViewUI.dll
+文件路径: C:\Windows\WinSxS\amd64_microsoft-windows-ui-shellcommon-desktop_31bf3856ad364e35_10.0.19041.3930_none_48e2bcec683973ae\r\JumpViewUI.dll
+文件最后修改时间: 1704299589
+文件大小: 95684
+文件深度: 3
+
+文件名: JumpViewUI.dll
+文件路径: C:\Windows\WinSxS\amd64_microsoft-windows-ui-shellcommon-desktop_31bf3856ad364e35_10.0.19041.3930_none_48e2bcec683973ae\f\JumpViewUI.dll
+文件最后修改时间: 1704299457
+文件大小: 111185
+文件深度: 3
+---------------------------------------------
